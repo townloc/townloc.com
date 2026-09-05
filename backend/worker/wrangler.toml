@@ -21,6 +21,15 @@ SENDER_EMAIL = "GglMap <contact@gglmap.com>"
 
 # RESEND_API_KEY is stored as a secret (not in this file).
 # Set it with:  npx wrangler secret put RESEND_API_KEY
+#
+# Admin CMS secrets (required for /admin):
+#   npx wrangler secret put ADMIN_PASSWORD
+#   npx wrangler secret put ADMIN_SECRET
+#   npx wrangler secret put GITHUB_TOKEN   (optional — needed to publish pages to repo)
+#
+# GitHub publish (optional vars)
+GITHUB_REPO = ""
+GITHUB_BRANCH = "main"
 
 [[d1_databases]]
 binding = "DB"

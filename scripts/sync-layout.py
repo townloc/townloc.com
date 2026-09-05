@@ -116,6 +116,7 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
 
 def render_footer(services_prefix: str, hash_base: str, contact_href=None):
     contact = contact_href if contact_href is not None else f"{hash_base}#contact"
+    blog_href = "../blog/index.html" if hash_base.startswith("../") else "blog/index.html"
     return f"""  <footer class="site-footer bg-ink px-5 py-14 text-paper lg:px-8">
     <div class="mx-auto max-w-7xl">
       <div class="footer-top">
@@ -137,8 +138,8 @@ def render_footer(services_prefix: str, hash_base: str, contact_href=None):
           <p class="footer-col-title">Company</p>
           <ul>
             <li><a href="{hash_base}#work">Work</a></li>
+            <li><a href="{blog_href}">Blog</a></li>
             <li><a href="{hash_base}#faq">FAQ</a></li>
-            <li><a href="{contact}">Contact</a></li>
             <li><a href="{hash_base}#trust">About</a></li>
           </ul>
         </div>

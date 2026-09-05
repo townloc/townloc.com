@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post | GglMap Blog</title>
+  <meta name="robots" content="index, follow" />
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111111'/%3E%3Cpath d='M8 22 L16 8 L24 22 Z' fill='none' stroke='%23f4f1ea' stroke-width='2'/%3E%3Ccircle cx='16' cy='18' r='2' fill='%23f4f1ea'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../assets/tailwind.js"></script>
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+
+<body class="bg-paper text-ink antialiased">
+  <div class="grain" aria-hidden="true"></div>
+  <a href="#main"
+    class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:bg-ink focus:px-4 focus:py-2 focus:text-paper">Skip
+    to content</a>
+  <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-white/10 text-paper">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8" aria-label="Primary">
+      <a href="../index.html" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
+        <span
+          class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
+        <span class="text-[15px] font-semibold tracking-tight">GglMap</span>
+      </a>
+      <ul class="hidden items-center gap-8 text-sm md:flex">
+        <li class="nav-drop relative">
+          <button type="button" class="nav-drop-btn nav-link inline-flex items-center gap-1 opacity-85"
+            aria-expanded="false" aria-haspopup="true">
+            Services
+            <svg class="nav-drop-caret h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8"
+              viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          <div class="nav-drop-menu absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] pt-3">
+            <div class="nav-drop-panel rounded-[1.35rem] p-1.5">
+              <a class="nav-drop-item" href="../services/google-business-profile-setup.html"><span
+                  class="nav-drop-num">01</span><span class="nav-drop-name">Google Business Profile</span><span
+                  class="nav-drop-arrow">→</span></a>
+              <a class="nav-drop-item" href="../services/google-maps-review-management.html"><span
+                  class="nav-drop-num">02</span><span class="nav-drop-name">Google Reviews</span><span
+                  class="nav-drop-arrow">→</span></a>
+              <a class="nav-drop-item" href="../services/google-ads-campaigns.html"><span
+                  class="nav-drop-num">03</span><span class="nav-drop-name">Google Ads</span><span
+                  class="nav-drop-arrow">→</span></a>
+              <a class="nav-drop-item" href="../services/web-development.html"><span class="nav-drop-num">04</span><span
+                  class="nav-drop-name">Website Building</span><span class="nav-drop-arrow">→</span></a>
+            </div>
+          </div>
+        </li>
+        <li><a class="nav-link opacity-85" href="../industries/index.html">Industries</a></li>
+        <li><a class="nav-link opacity-85" href="../index.html#work">Work</a></li>
+        <li><a class="nav-link opacity-85" href="../index.html#trust">Trust</a></li>
+        <li><a class="nav-link opacity-85" href="../index.html#faq">FAQ</a></li>
+        <li><a class="nav-link opacity-85" href="../index.html#contact">Contact</a></li>
+      </ul>
+      <div class="flex items-center gap-3">
+        <a href="../index.html#contact"
+          class="header-cta hidden rounded-full bg-paper px-4 py-2 text-sm font-medium text-ink md:inline-flex">Get
+          Started</a>
+        <button id="menu-btn"
+          class="grid h-10 w-10 place-items-center rounded-full border border-white/20 md:hidden"
+          aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <svg id="icon-open" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg id="icon-close" class="hidden h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+    <div id="mobile-menu" class="mobile-menu md:hidden" aria-hidden="true">
+      <div class="mobile-menu-inner">
+        <div class="mobile-menu-nav">
+          <a href="../industries/index.html" class="mobile-link mobile-menu-item">Industries</a>
+          <a href="../index.html#contact" class="mobile-link mobile-menu-item mobile-menu-cta">Contact</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="px-5 pb-16 pt-32 lg:px-8 lg:pt-40">
+    <article class="legal-prose mx-auto max-w-3xl">
+      <nav class="text-xs text-ink/45" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-2">
+          <li><a class="hover:text-ink" href="../index.html">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a class="hover:text-ink" href="index.html">Blog</a></li>
+        </ol>
+      </nav>
+      <h1 id="post-title" class="mt-8 font-serif text-4xl tracking-tight sm:text-5xl">Loading…</h1>
+      <p id="post-date" class="mt-4 text-sm text-ink/50"></p>
+      <div id="post-body" class="mt-8"></div>
+      <p id="post-error" class="mt-8 hidden text-sm text-red-700"></p>
+      <p class="mt-10"><a href="index.html" class="text-sm font-medium">← All posts</a></p>
+    </article>
+  </main>
+
+  <footer class="site-footer bg-ink px-5 py-14 text-paper lg:px-8">
+    <div class="mx-auto max-w-7xl">
+      <div class="footer-bottom">
+        <p>© <span id="year"></span> GglMap</p>
+        <a href="../index.html#contact" class="footer-cta">Get a Free Assessment</a>
+      </div>
+    </div>
+  </footer>
+  <script src="../assets/site.js"></script>
+  <script>
+    (function () {
+      var API = "https://gglmap.catiq.workers.dev";
+      var params = new URLSearchParams(location.search);
+      var slug = params.get("slug") || "";
+      var err = document.getElementById("post-error");
+      if (!slug) {
+        err.textContent = "Missing post slug.";
+        err.classList.remove("hidden");
+        return;
+      }
+      fetch(API + "/api/posts/" + encodeURIComponent(slug))
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.d.post) throw new Error((res.d && res.d.message) || "Not found");
+          var p = res.d.post;
+          document.title = p.title + " | GglMap Blog";
+          document.getElementById("post-title").textContent = p.title;
+          document.getElementById("post-date").textContent = p.updated_at || "";
+          document.getElementById("post-body").innerHTML = p.body || "";
+        })
+        .catch(function (e) {
+          err.textContent = e.message || "Could not load post.";
+          err.classList.remove("hidden");
+        });
+    })();
+  </script>
+</body>
+
+</html>

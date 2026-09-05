@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Sign in · GglMap Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-mark">G</div>
+        <div>
+          <h1>GglMap Admin</h1>
+          <p class="sub">Sign in to manage leads, posts, and pages</p>
+        </div>
+      </div>
+      <form id="login-form">
+        <label class="field-label" for="password">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" />
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" style="width:100%">Sign in</button>
+        </div>
+        <p id="error" class="hint" style="color:#b91c1c" hidden></p>
+      </form>
+    </div>
+  </div>
+  <script src="admin.js"></script>
+  <script>
+    if (Admin.getToken()) location.href = "app.html";
+    document.getElementById("login-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var err = document.getElementById("error");
+      err.hidden = true;
+      try {
+        await Admin.login(document.getElementById("password").value);
+        location.href = "app.html";
+      } catch (ex) {
+        err.textContent = ex.message || "Login failed";
+        err.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -243,9 +243,47 @@ Server error (`500`):
 
 ## What this Worker does NOT do yet
 
-- CMS / admin panel
-- Authentication
-- Bulk messaging
-- Custom domain routing
+- Bulk messaging / email campaigns
 
-Those will be added in later steps.
+## 9. Admin CMS
+
+Static admin UI: open `/admin/` on the website (e.g. `http://localhost:5500/admin/`).
+
+API base: `https://gglmap.catiq.workers.dev`
+
+### Secrets (required)
+
+```bash
+npx wrangler secret put ADMIN_PASSWORD
+npx wrangler secret put ADMIN_SECRET
+```
+
+Use a long random string for `ADMIN_SECRET` (token signing).
+
+### Post images (URL-based)
+
+Featured Image and OG Image are stored as URLs on each post. Paste a public image URL in the Admin post editor, then use **Update Preview** / **Remove Image**. No R2 or file upload is required.
+
+### Optional — publish page HTML to GitHub
+
+```bash
+npx wrangler secret put GITHUB_TOKEN
+```
+
+Set in `wrangler.toml`:
+
+```toml
+GITHUB_REPO = "owner/repo"
+GITHUB_BRANCH = "main"
+```
+
+### Admin features
+
+- View / update lead status
+- Create / edit / delete blog posts
+- Edit allowlisted HTML pages → Save to D1 → Publish to GitHub
+
+### Public blog
+
+- `/blog/` — list published posts
+- `/blog/post.html?slug=...` — single post
