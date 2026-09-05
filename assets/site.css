@@ -238,14 +238,12 @@ html.is-navigating #menu-btn svg {
 }
 html.is-navigating #mobile-menu {
   opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  grid-template-rows: 0fr !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  grid-template-rows: 1fr !important;
 }
 html.is-navigating .nav-drop-menu {
   opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
 }
 
 #menu-btn {

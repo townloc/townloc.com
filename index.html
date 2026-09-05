@@ -259,15 +259,13 @@
 
     html.is-navigating #mobile-menu {
       opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-      grid-template-rows: 0fr !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      grid-template-rows: 1fr !important;
     }
 
     html.is-navigating .nav-drop-menu {
       opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
     }
 
     #menu-btn {
@@ -2446,7 +2444,7 @@
             </div>
           </div>
         </li>
-        <li><a class="nav-link opacity-85" href="industries/index.html">Industries</a></li>
+        <li><a class="nav-link opacity-85" href="#industries">Industries</a></li>
         <li><a class="nav-link opacity-85" data-nav="work" href="#work">Work</a></li>
         <li><a class="nav-link opacity-85" data-nav="trust" href="#trust">Trust</a></li>
         <li><a class="nav-link opacity-85" data-nav="faq" href="#faq">FAQ</a></li>
@@ -2495,7 +2493,7 @@
               </div>
             </div>
           </div>
-          <a href="industries/index.html" class="mobile-link mobile-menu-item">Industries</a>
+          <a href="#industries" class="mobile-link mobile-menu-item">Industries</a>
           <a href="#work" class="mobile-link mobile-menu-item">Work</a>
           <a href="#trust" class="mobile-link mobile-menu-item">Trust</a>
           <a href="#faq" class="mobile-link mobile-menu-item">FAQ</a>

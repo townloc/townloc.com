@@ -52,7 +52,7 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
             </div>
           </div>
         </li>
-        <li><a class="nav-link opacity-85" href="{industries_prefix}index.html"{ac(current, "industries")}>Industries</a></li>
+        <li><a class="nav-link opacity-85" href="{hash_base}#industries"{ac(current, "industries")}>Industries</a></li>
         <li><a class="nav-link opacity-85" data-nav="work" href="{hash_base}#work">Work</a></li>
         <li><a class="nav-link opacity-85" data-nav="trust" href="{hash_base}#trust">Trust</a></li>
         <li><a class="nav-link opacity-85" data-nav="faq" href="{hash_base}#faq">FAQ</a></li>
@@ -102,7 +102,7 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
               </div>
             </div>
           </div>
-          <a href="{industries_prefix}index.html" class="mobile-link mobile-menu-item"{ac(current, "industries")}>Industries</a>
+          <a href="{hash_base}#industries" class="mobile-link mobile-menu-item"{ac(current, "industries")}>Industries</a>
           <a href="{hash_base}#work" class="mobile-link mobile-menu-item">Work</a>
           <a href="{hash_base}#trust" class="mobile-link mobile-menu-item">Trust</a>
           <a href="{hash_base}#faq" class="mobile-link mobile-menu-item">FAQ</a>
@@ -227,7 +227,7 @@ def main():
         # rel, prefix, services_prefix, industries_prefix, home, hash_base, current, contact_href
         ("privacy.html", "", "services/", "industries/", "index.html", "index.html", None, None),
         ("terms.html", "", "services/", "industries/", "index.html", "index.html", None, None),
-        ("industries/index.html", "../", "../services/", "", "../index.html", "../index.html", "industries", None),
+        ("industries/index.html", "../", "../services/", "", "../index.html", "../index.html", None, None),
         ("services/index.html", "../", "", "../industries/", "../index.html", "../index.html", None, None),
         ("services/google-business-profile-setup.html", "../", "", "../industries/", "../index.html", "../index.html", "gbp", "#contact"),
         ("services/google-maps-review-management.html", "../", "", "../industries/", "../index.html", "../index.html", "reviews", "#contact"),
