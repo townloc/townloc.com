@@ -270,16 +270,20 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   function isValidPhone(value) {
     return value.replace(/\D/g, "").length >= 10;
   }
 
   function contactApiUrl() {
-    var host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") {
-      return "http://127.0.0.1:8787/api/contact";
-    }
-    return "https://google-services.catiq.workers.dev/api/contact";
+    return "https://gglmap.catiq.workers.dev/api/contact";
   }
 
   form.addEventListener("submit", function (event) {
@@ -381,14 +385,12 @@
           successEl.classList.add("success-pop");
         }
         if (successCopy) {
-          successCopy.textContent =
-            "Thanks, " +
-            data.clientName +
-            ". We have " +
-            data.service +
-            " on file for " +
-            data.businessName +
-            ". Your message has been received — we'll follow up shortly.";
+          successCopy.innerHTML =
+            "Thanks, <span class=\"text-ink\">" +
+            escapeHtml(data.clientName) +
+            "</span>. Your request for <span class=\"text-ink\">" +
+            escapeHtml(data.service) +
+            "</span> has been received. We’ll be in touch shortly.";
         }
       })
       .catch(function () {

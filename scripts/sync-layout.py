@@ -24,7 +24,7 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
       <a href="{home}" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
         <span
           class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
-        <span class="text-[15px] font-semibold tracking-tight">Townloc</span>
+        <span class="text-[15px] font-semibold tracking-tight">GglMap</span>
       </a>
       <ul class="hidden items-center gap-8 text-sm md:flex">
         <li class="nav-drop relative">
@@ -120,7 +120,7 @@ def render_footer(services_prefix: str, hash_base: str, contact_href=None):
     <div class="mx-auto max-w-7xl">
       <div class="footer-top">
         <div class="footer-col">
-          <p class="footer-col-title">Townloc</p>
+          <p class="footer-col-title">GglMap</p>
           <p class="footer-tagline">Local Google marketing for businesses that already do good work — profile, reviews,
             ads, and websites you own.</p>
         </div>
@@ -157,7 +157,7 @@ def render_footer(services_prefix: str, hash_base: str, contact_href=None):
           Hosting &amp; SSL Setup <span>|</span> Pay Only for Domain</p>
       </div>
       <div class="footer-bottom">
-        <p>© <span id="year"></span> Townloc</p>
+        <p>© <span id="year"></span> GglMap</p>
         <a href="{contact}" class="footer-cta">Get a Free Assessment</a>
       </div>
     </div>

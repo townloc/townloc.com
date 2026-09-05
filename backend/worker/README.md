@@ -1,8 +1,8 @@
-# Townloc Contact Worker
+# GglMap Contact Worker
 
 Cloudflare Worker backend for the Free Assessment / Contact form.
 
-**Live Worker:** https://google-services.catiq.workers.dev/
+**Live Worker:** https://gglmap.catiq.workers.dev/
 
 Validated form submissions are stored in **Cloudflare D1** (`leads` table).  
 Email notifications are sent via **Resend** after each successful lead.
@@ -32,7 +32,7 @@ npm install
 
 ```bash
 npx wrangler login
-npx wrangler d1 create google-services-leads
+npx wrangler d1 create gglmap-leads
 ```
 
 Copy the UUID into `wrangler.toml` → `database_id`.
@@ -51,22 +51,30 @@ npm run db:migrate:remote
 
 ## 3. Resend email setup (Zoho inboxes)
 
-Lead alerts are sent **to** `contact@townloc.com` (Zoho)  
-and **from** `Townloc <contact@townloc.com>`.
+Zoho mailboxes on `gglmap.com` (full send + receive):
+
+| Address | Role |
+|---|---|
+| `contact@gglmap.com` | Lead / form notifications (used by the Worker) |
+| `hello@gglmap.com` | General brand |
+| `support@gglmap.com` | Client support |
+| `marketing@gglmap.com` | Bulk marketing (later) |
+
+Form alerts go **to** `contact@gglmap.com` and **from** `GglMap <contact@gglmap.com>`.  
+Change in `wrangler.toml` anytime → `npm run deploy`.
 
 ### Step 1 — Create a Resend account
 
 Go to https://resend.com and sign up (free tier: 100 emails/day).
 
-### Step 2 — Verify `townloc.com` in Resend
+### Step 2 — Verify `gglmap.com` in Resend
 
 1. Open https://resend.com/domains
-2. Add `townloc.com`
-3. Add the DNS records Resend shows (SPF / DKIM — usually TXT records in Cloudflare DNS)
-4. Wait until the domain status is **Verified**
+2. Add `gglmap.com`
+3. Add the DNS records Resend shows (SPF / DKIM TXT)
+4. Wait until status is **Verified**
 
-> Zoho keeps your MX records for receiving mail.  
-> Resend only needs SPF/DKIM TXT records for **sending**. Do not remove Zoho MX.
+> Zoho keeps MX for receiving. Resend only needs SPF/DKIM for **sending**. Do not remove Zoho MX.
 
 ### Step 3 — Create an API key
 
@@ -78,42 +86,27 @@ Go to https://resend.com/api-keys → Create API Key → copy it.
 npx wrangler secret put RESEND_API_KEY
 ```
 
-Paste the key when prompted. This keeps it out of Git and `wrangler.toml`.
-
 ### Step 5 — Deploy
 
 ```bash
 npm run deploy
 ```
 
-### Email roles
-
-| Address | Role |
-|---|---|
-| `contact@townloc.com` | Lead / form notifications |
-| `marketing@townloc.com` | Bulk marketing (later) |
-| `hello@townloc.com` | General brand |
-| `support@townloc.com` | Client support |
-
 ## 4. Environment variables & secrets
 
 | Variable | Location | Purpose |
 |---|---|---|
 | `RESEND_API_KEY` | Cloudflare secret | Resend API key (never in Git) |
-| `RECIPIENT_EMAIL` | `wrangler.toml` `[vars]` | Who receives lead notifications (`contact@townloc.com`) |
-| `SENDER_EMAIL` | `wrangler.toml` `[vars]` | From address (`Townloc <contact@townloc.com>`) |
+| `RECIPIENT_EMAIL` | `wrangler.toml` `[vars]` | Who receives leads (`contact@gglmap.com`) |
+| `SENDER_EMAIL` | `wrangler.toml` `[vars]` | From address (`GglMap <contact@gglmap.com>`) |
 | `ALLOWED_ORIGINS` | `wrangler.toml` `[vars]` | CORS allowed origins |
 
-### Change the recipient email later
+### Change email later
 
-Option A — edit `wrangler.toml` and redeploy:
+Edit `wrangler.toml` and redeploy:
 ```toml
-RECIPIENT_EMAIL = "hello@townloc.com"
-```
-
-Option B — set as secret (no redeploy needed):
-```bash
-npx wrangler secret put RECIPIENT_EMAIL
+RECIPIENT_EMAIL = "hello@gglmap.com"
+SENDER_EMAIL = "GglMap <hello@gglmap.com>"
 ```
 
 ## 5. Spam protection
@@ -199,7 +192,7 @@ npm run db:leads:local
 
 Or remote:
 ```bash
-npx wrangler d1 execute google-services-leads --remote \
+npx wrangler d1 execute gglmap-leads --remote \
   --command "SELECT id, name, email, service, status, created_at FROM leads ORDER BY id DESC LIMIT 10;"
 ```
 

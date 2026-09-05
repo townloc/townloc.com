@@ -4,18 +4,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Local Google Marketing for Local Businesses | Townloc</title>
+  <title>Local Google Marketing for Local Businesses | GglMap</title>
   <meta name="description"
-    content="Townloc helps local businesses get found, build trust, capture high-intent searches, and turn Google visitors into calls, bookings, enquiries, and customers." />
+    content="GglMap helps local businesses get found, build trust, capture high-intent searches, and turn Google visitors into calls, bookings, enquiries, and customers." />
   <meta name="keywords"
     content="Google Business Profile optimization, Google Reviews, Google Ads for local businesses, Website Building, local SEO" />
-  <meta name="author" content="Townloc" />
+  <meta name="author" content="GglMap" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://northline.example/" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Local Google Marketing for Local Businesses | Townloc" />
+  <meta property="og:title" content="Local Google Marketing for Local Businesses | GglMap" />
   <meta property="og:description"
-    content="Townloc helps local businesses get found, build trust, capture high-intent searches, and turn Google visitors into calls, bookings, enquiries, and customers." />
+    content="GglMap helps local businesses get found, build trust, capture high-intent searches, and turn Google visitors into calls, bookings, enquiries, and customers." />
   <meta property="og:url" content="https://northline.example/" />
   <meta property="og:image"
     content="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&amp;fit=crop&amp;w=1200&amp;q=75" />
@@ -1939,6 +1939,18 @@
       border-top-width: 0 !important;
     }
 
+    /* Honeypot — invisible to real users (mirrors site.css) */
+    .hp-wrap {
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     /* Sitewide typography + visibility (homepage; mirrors site.css) */
     .text-xs {
       font-size: 0.8125rem !important;
@@ -2305,14 +2317,14 @@
   {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
-    "name": "Townloc",
+    "name": "GglMap",
     "url": "https://northline.example/",
     "description": "New Google Business Profile setup and existing profiles optimization, Google Reviews, Google Ads campaigns, and Website Building for local businesses.",
     "areaServed": "United States",
     "email": "hello@northline.example",
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
-      "name": "Townloc services",
+      "name": "GglMap services",
       "itemListElement": [
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Google Business Profile", "url": "https://northline.example/services/google-business-profile-setup.html" } },
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Google Reviews", "url": "https://northline.example/services/google-maps-review-management.html" } },
@@ -2330,7 +2342,7 @@
       {
         "@type": "Question",
         "name": "Do you buy Google reviews?",
-        "acceptedAnswer": { "@type": "Answer", "text": "No. Townloc never buys stars, farms accounts, or posts fake check-ins. Review work is a timed ask after a real job so customers who already used you can write what they experienced." }
+        "acceptedAnswer": { "@type": "Answer", "text": "No. GglMap never buys stars, farms accounts, or posts fake check-ins. Review work is a timed ask after a real job so customers who already used you can write what they experienced." }
       },
       {
         "@type": "Question",
@@ -2345,7 +2357,7 @@
       {
         "@type": "Question",
         "name": "Who pays for Google Ads clicks?",
-        "acceptedAnswer": { "@type": "Answer", "text": "You pay Google for media. Townloc builds and runs the campaigns. We do not mark up a mystery ad budget as a product. The invoice from Google is yours to see." }
+        "acceptedAnswer": { "@type": "Answer", "text": "You pay Google for media. GglMap builds and runs the campaigns. We do not mark up a mystery ad budget as a product. The invoice from Google is yours to see." }
       }
     ]
   }
@@ -2363,7 +2375,7 @@
       <a href="index.html" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
         <span
           class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
-        <span class="text-[15px] font-semibold tracking-tight">Townloc</span>
+        <span class="text-[15px] font-semibold tracking-tight">GglMap</span>
       </a>
       <ul class="hidden items-center gap-8 text-sm md:flex">
         <li class="nav-drop relative">
@@ -2477,10 +2489,10 @@
     </section>
 
     <section id="trust-strip" class="border-b border-line bg-paper px-5 py-10 lg:px-8"
-      aria-label="Why businesses choose Townloc">
+      aria-label="Why businesses choose GglMap">
       <div class="mx-auto max-w-7xl">
         <p class="text-center text-xs font-medium uppercase tracking-[0.22em] text-ink/45">Why Businesses Choose
-          Townloc</p>
+          GglMap</p>
         <div class="trust-badges mt-6">
           <div class="trust-badge reveal">
             <span class="trust-badge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3044,7 +3056,7 @@
             <summary class="flex items-center justify-between gap-4 font-medium">Who pays for Google Ads?<span
                 class="text-ink/30">+</span></summary>
             <div class="faq-panel">
-              <p class="mt-3 text-muted">You pay Google for media. Townloc builds and runs
+              <p class="mt-3 text-muted">You pay Google for media. GglMap builds and runs
                 the campaigns. We do not mark up a mystery ad budget. The invoice from Google is yours to see.</p>
             </div>
           </details>
@@ -3140,7 +3152,7 @@
           </form>
           <div id="form-success"
             class="hidden success-pop w-full rounded-[1.75rem] border border-line bg-white p-10 text-center shadow-soft">
-            <p class="font-serif text-3xl">Request received.</p>
+            <p class="font-serif text-3xl">Request Received</p>
             <p id="success-copy" class="mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink/65"></p>
             <button id="send-another" type="button"
               class="mt-8 text-sm underline underline-offset-4 transition-all duration-300 ease-in-out hover:opacity-70">Send
@@ -3155,7 +3167,7 @@
     <div class="mx-auto max-w-7xl">
       <div class="footer-top">
         <div class="footer-col">
-          <p class="footer-col-title">Townloc</p>
+          <p class="footer-col-title">GglMap</p>
           <p class="footer-tagline">Local Google marketing for businesses that already do good work — Google Business
             Profile, reviews, ads, and websites you own.</p>
         </div>
@@ -3192,7 +3204,7 @@
           Hosting &amp; SSL Setup <span>|</span> Pay Only for Your Domain</p>
       </div>
       <div class="footer-bottom">
-        <p>© <span id="year"></span> Townloc. All rights reserved.</p>
+        <p>© <span id="year"></span> GglMap. All rights reserved.</p>
         <a href="#contact" class="footer-cta">Get a Free Assessment</a>
       </div>
     </div>
@@ -3202,7 +3214,7 @@
     class="w-[min(640px,92vw)] rounded-3xl border border-line bg-paper p-8 text-ink shadow-soft backdrop:bg-ink/50"
     aria-labelledby="privacy-title">
     <h2 id="privacy-title" class="font-serif text-3xl">Privacy</h2>
-    <p class="mt-4 text-sm leading-relaxed text-ink/70">Townloc collects only what you type into the contract form.
+    <p class="mt-4 text-sm leading-relaxed text-ink/70">GglMap collects only what you type into the contract form.
       That data is used to reply. It is not sold. Email hello@northline.example to remove a record.</p>
     <form method="dialog" class="mt-6"><button
         class="rounded-full bg-ink px-5 py-2 text-sm text-paper transition-all duration-300 ease-in-out hover:opacity-90">Close</button>
