@@ -798,6 +798,38 @@
       background: rgba(245, 241, 232, 0.1);
     }
 
+    /* ≤1211px: image fills full banner behind text/CTAs (not a short top strip) */
+    @media (max-width: 1211px) {
+      .hero-banner-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        z-index: 0;
+      }
+
+      .hero-banner::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(10, 10, 10, 0.55) 0%,
+          rgba(10, 10, 10, 0.72) 55%,
+          rgba(10, 10, 10, 0.82) 100%
+        );
+      }
+
+      .hero-banner-content {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
     /* Keep trust strip attached to the hero so it shows in the first view with the banner */
     .hero-banner {
       margin-bottom: 0;
