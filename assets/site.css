@@ -1589,3 +1589,39 @@ main section h2.svc-section-title {
 
 /* Honeypot — invisible to real users */
 .hp-wrap{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+
+/* Clickable controls: finger cursor while the mouse is on them */
+a[href],
+a[href]:hover,
+a[href]:active,
+a[href]:focus,
+button:not(:disabled),
+button:not(:disabled):hover,
+button:not(:disabled):active,
+summary,
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:active,
+.btn-secondary,
+.btn-secondary:hover,
+.btn-secondary:active,
+.nav-link,
+.nav-link:hover,
+.nav-link:active,
+.nav-drop-btn,
+.nav-drop-btn:hover,
+.nav-drop-btn:active,
+.nav-drop-item,
+.nav-drop-item:hover,
+.nav-drop-item:active,
+.mobile-link,
+.mobile-link:hover,
+.mobile-link:active,
+.footer-cta,
+.footer-cta:hover,
+.footer-cta:active,
+.back-to-top,
+.review-arrow:not(:disabled),
+[role="button"] {
+  cursor: pointer !important;
+}

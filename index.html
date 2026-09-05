@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -21,7 +21,7 @@
     content="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&amp;fit=crop&amp;w=1200&amp;q=75" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111111'/%3E%3Cpath d='M8 22 L16 8 L24 22 Z' fill='none' stroke='%23f4f1ea' stroke-width='2'/%3E%3Ccircle cx='16' cy='18' r='2' fill='%23f4f1ea'/%3E%3C/svg%3E" />
+    href="/assets/images/gglmap-favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="image" href="assets/images/home/hero-banner.jpg" fetchpriority="high" />
@@ -800,6 +800,25 @@
       background: rgba(245, 241, 232, 0.1);
     }
 
+    /* Keep trust strip attached to the hero so it shows in the first view with the banner */
+    .hero-banner {
+      margin-bottom: 0;
+    }
+
+    #trust-strip.hero-trust-strip {
+      position: relative;
+      z-index: 2;
+      margin-top: -1.25rem;
+      padding-top: 1.75rem;
+    }
+
+    @media (min-width: 1024px) {
+      #trust-strip.hero-trust-strip {
+        margin-top: -1.75rem;
+        padding-top: 2rem;
+      }
+    }
+
     .hero-title {
       font-size: 3rem;
       line-height: 1.1;
@@ -846,8 +865,8 @@
     }
 
     .btn-primary:hover {
-      transform: translateY(-2px);
       opacity: 0.94;
+      box-shadow: 0 18px 44px -18px rgba(17, 17, 17, 0.5);
     }
 
     .btn-secondary {
@@ -2275,7 +2294,9 @@
       html.js .hero-banner .hero-title,
       html.js .hero-banner .hero-lead,
       html.js .hero-banner .hero-actions,
-      html.js .hero-banner .hero-banner-img {
+      html.js .hero-banner .hero-banner-img,
+      html.js #trust-strip.hero-trust-strip > .mx-auto > p,
+      html.js #trust-strip.hero-trust-strip .trust-badge {
         animation: hero-fade-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
@@ -2299,6 +2320,26 @@
       html.js .hero-banner .hero-actions {
         animation-delay: 0.42s;
       }
+
+      html.js #trust-strip.hero-trust-strip > .mx-auto > p {
+        animation-delay: 0.5s;
+      }
+
+      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(1) {
+        animation-delay: 0.56s;
+      }
+
+      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(2) {
+        animation-delay: 0.62s;
+      }
+
+      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(3) {
+        animation-delay: 0.68s;
+      }
+
+      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(4) {
+        animation-delay: 0.74s;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -2306,7 +2347,9 @@
       html.js .hero-banner .hero-title,
       html.js .hero-banner .hero-lead,
       html.js .hero-banner .hero-actions,
-      html.js .hero-banner .hero-banner-img {
+      html.js .hero-banner .hero-banner-img,
+      html.js #trust-strip.hero-trust-strip > .mx-auto > p,
+      html.js #trust-strip.hero-trust-strip .trust-badge {
         animation: none !important;
         opacity: 1 !important;
         transform: none !important;
@@ -2488,13 +2531,13 @@
       </div>
     </section>
 
-    <section id="trust-strip" class="border-b border-line bg-paper px-5 py-10 lg:px-8"
+    <section id="trust-strip" class="hero-trust-strip border-b border-line bg-paper px-5 pb-8 pt-6 lg:px-8 lg:pb-10 lg:pt-8"
       aria-label="Why businesses choose GglMap">
       <div class="mx-auto max-w-7xl">
         <p class="text-center text-xs font-medium uppercase tracking-[0.22em] text-ink/45">Why Businesses Choose
           GglMap</p>
         <div class="trust-badges mt-6">
-          <div class="trust-badge reveal">
+          <div class="trust-badge">
             <span class="trust-badge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.75">
                 <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7-6.3-4.6L5.7 21l2.3-7-6-4.6h7.6z" />
@@ -2504,7 +2547,7 @@
               <p class="mt-0.5 text-xs text-ink/55">No purchased or fake reviews.</p>
             </div>
           </div>
-          <div class="trust-badge reveal">
+          <div class="trust-badge">
             <span class="trust-badge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.75">
                 <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7H14a3.5 3.5 0 010 7H6" />
@@ -2514,7 +2557,7 @@
               <p class="mt-0.5 text-xs text-ink/55">Transparent ad spend.</p>
             </div>
           </div>
-          <div class="trust-badge reveal">
+          <div class="trust-badge">
             <span class="trust-badge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.75">
                 <path d="M9 12l2 2 4-4" />
@@ -2525,7 +2568,7 @@
               <p class="mt-0.5 text-xs text-ink/55">Full source-code access.</p>
             </div>
           </div>
-          <div class="trust-badge reveal">
+          <div class="trust-badge">
             <span class="trust-badge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.75">
                 <rect x="3" y="11" width="18" height="11" rx="2" />

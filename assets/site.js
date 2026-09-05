@@ -29,6 +29,70 @@
   window.addEventListener("scroll", markNav, { passive: true });
   markNav();
 
+  /*
+   * Chrome/Edge can freeze the cursor after click until the mouse moves.
+   * Keep pointer on the clicked control while the mouse remains over it;
+   * restore the normal cursor when the pointer leaves.
+   */
+  var clickableSelector =
+    "a[href], button:not(:disabled), summary, [role='button'], .nav-drop-btn, .back-to-top, .review-arrow:not(:disabled), .footer-cta, .btn-primary, .btn-secondary, .nav-link, .nav-drop-item, .mobile-link, input[type='submit']:not(:disabled), input[type='button']:not(:disabled), input[type='reset']:not(:disabled), label[for]";
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var el = event.target && event.target.closest ? event.target.closest(clickableSelector) : null;
+      if (!el) return;
+
+      el.style.setProperty("cursor", "pointer", "important");
+      void el.offsetHeight;
+
+      function restoreCursor() {
+        el.style.removeProperty("cursor");
+        el.removeEventListener("pointerleave", restoreCursor);
+        el.removeEventListener("mouseleave", restoreCursor);
+      }
+
+      el.addEventListener("pointerleave", restoreCursor);
+      el.addEventListener("mouseleave", restoreCursor);
+    },
+    true
+  );
+
+  /* Same-page section links: scroll without leaving # in the URL */
+  function scrollToId(id) {
+    var el = document.getElementById(id);
+    if (!el) return false;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    return true;
+  }
+
+  function stripHashFromUrl() {
+    if (!location.hash) return;
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest("a[href^='#']");
+    if (!link || link.classList.contains("legal-link")) return;
+    var href = link.getAttribute("href") || "";
+    if (href.length < 2) return;
+    var id = decodeURIComponent(href.slice(1));
+    if (!document.getElementById(id)) return;
+    event.preventDefault();
+    scrollToId(id);
+    history.replaceState(null, "", location.pathname + location.search);
+  });
+
+  if (location.hash.length > 1) {
+    var bootId = decodeURIComponent(location.hash.slice(1));
+    if (document.getElementById(bootId)) {
+      window.setTimeout(function () {
+        scrollToId(bootId);
+        stripHashFromUrl();
+      }, 0);
+    }
+  }
+
   var menuBtn = document.getElementById("menu-btn");
   var mobileMenu = document.getElementById("mobile-menu");
   var iconOpen = document.getElementById("icon-open");
