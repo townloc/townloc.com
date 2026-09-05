@@ -283,7 +283,7 @@
   }
 
   function contactApiUrl() {
-    return "https://gglmap.catiq.workers.dev/api/contact";
+    return "/api/contact";
   }
 
   form.addEventListener("submit", function (event) {

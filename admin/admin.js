@@ -1,6 +1,6 @@
 /* GglMap Admin API client */
 (function (global) {
-  var API_BASE = "https://gglmap.catiq.workers.dev";
+  var API_BASE = "";
   var TOKEN_KEY = "gglmap_admin_token";
 
   function getToken() {

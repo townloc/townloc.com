@@ -1084,8 +1084,15 @@ async function handleAdmin(request, env, origin, url) {
 
 export default {
   async fetch(request, env) {
-    const origin = resolveOrigin(request, env);
     const url = new URL(request.url);
+
+    // Apex canonical: www → non-www
+    if (url.hostname === "www.gglmap.com") {
+      url.hostname = "gglmap.com";
+      return Response.redirect(url.toString(), 301);
+    }
+
+    const origin = resolveOrigin(request, env);
 
     try {
       if (request.method === "OPTIONS") {
@@ -1129,7 +1136,7 @@ export default {
         );
       }
 
-      if (url.pathname === "/" || url.pathname === "/api" || url.pathname === "/api/") {
+      if (url.pathname === "/api" || url.pathname === "/api/") {
         return json(
           {
             success: true,
@@ -1144,6 +1151,11 @@ export default {
           200,
           origin
         );
+      }
+
+      // Non-/api requests are served by Workers static assets (see wrangler.toml).
+      if (env.ASSETS) {
+        return env.ASSETS.fetch(request);
       }
 
       return json({ success: false, message: "Not found." }, 404, origin);
