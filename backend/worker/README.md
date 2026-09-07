@@ -9,8 +9,11 @@ It:
 - runs the Admin CMS API
 - can also serve the website files
 
-**Live example:** https://gglmap.com (API under `/api/...`)  
-**Admin:** https://gglmap.com/admin
+**Live:** https://townloc.com (API under `/api/...`)  
+**Admin:** https://townloc.com/admin
+
+**Do not use Cloudflare Pages for this project.** One Worker serves the site and API together.  
+Full step-by-step (including “Pages by mistake” fix): see the root `README.md`.
 
 For “copy this backend to another project”, read **`doc.md`** in this folder.
 
@@ -63,7 +66,7 @@ npx wrangler login
 
 ### 1) Database
 ```bash
-npx wrangler d1 create gglmap-leads
+npx wrangler d1 create townloc-leads
 ```
 Paste the database id into `wrangler.toml`.
 

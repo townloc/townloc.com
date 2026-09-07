@@ -49,7 +49,7 @@ Frontend pages  ------------------+
 2. API (backend)
 3. Admin pages
 
-All live on your domain (example: `gglmap.com`).
+All live on your domain (example: `townloc.com`).
 
 ---
 

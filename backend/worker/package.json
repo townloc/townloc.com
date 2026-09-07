@@ -1,18 +1,18 @@
 {
-  "name": "gglmap-worker",
+  "name": "townloc-worker",
   "private": true,
   "version": "1.0.0",
-  "description": "Cloudflare Worker API for GglMap Free Assessment / Contact form",
+  "description": "Cloudflare Worker API for Townloc Free Assessment / Contact form",
   "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "db:create": "wrangler d1 create gglmap-leads",
-    "db:migrate:local": "wrangler d1 migrations apply gglmap-leads --local",
-    "db:migrate:remote": "wrangler d1 migrations apply gglmap-leads --remote",
-    "db:leads:local": "wrangler d1 execute gglmap-leads --local --command \"SELECT id, name, email, phone, business, service, status, created_at FROM leads ORDER BY id DESC LIMIT 10;\""
+    "db:create": "wrangler d1 create townloc-leads",
+    "db:migrate:local": "wrangler d1 migrations apply townloc-leads --local",
+    "db:migrate:remote": "wrangler d1 migrations apply townloc-leads --remote",
+    "db:leads:local": "wrangler d1 execute townloc-leads --local --command \"SELECT id, name, email, phone, business, service, status, created_at FROM leads ORDER BY id DESC LIMIT 10;\""
   },
   "devDependencies": {
     "wrangler": "^4.14.0"
