@@ -18,8 +18,22 @@
     leads: "Leads",
     posts: "Posts",
     "post-editor": "Post editor",
-    pages: "Pages",
+    pages: "Advanced",
+    "site-cms": "Site CMS",
     settings: "Settings",
+  };
+
+  var cmsState = {
+    cms: null,
+    fields: null,
+    pages: [],
+    customPages: [],
+    autoPath: null,
+    autoFields: [],
+    autoValues: {},
+    layoutRegion: null,
+    layoutFields: [],
+    layoutValues: {},
   };
 
   function $(id) {
@@ -79,13 +93,18 @@
       n.classList.toggle(
         "active",
         n.getAttribute("data-nav") === name ||
-          (name === "post-editor" && n.getAttribute("data-nav") === "posts")
+        (name === "post-editor" && n.getAttribute("data-nav") === "posts")
       );
     });
     var panel = $("panel-" + name);
     if (panel) panel.classList.add("active");
     $("page-title").textContent = titles[name] || "Admin";
     closeSidebar();
+    if (name === "site-cms") {
+      loadCms().catch(function (ex) {
+        toast(ex.message || "Unable to load Site CMS.", false);
+      });
+    }
   }
 
   function openSidebar() {
@@ -530,6 +549,418 @@
     });
   }
 
+  async function loadCms() {
+    var data = await Admin.api("GET", "/api/admin/cms");
+    cmsState.cms = data.cms || {};
+    cmsState.fields = data.fields || {};
+    cmsState.pages = data.pages || [];
+    cmsState.customPages = data.customPages || [];
+    fillCmsPageOptions();
+    await renderCmsFields();
+    var st = $("cms-status");
+    if (st) {
+      st.textContent = "Select content above to load editable fields.";
+    }
+  }
+
+  function fillCmsPageOptions() {
+    var group = $("cms-auto-pages");
+    if (!group) return;
+    var prev = getCmsSectionKey();
+    group.innerHTML = "";
+    var titleByPath = {};
+    (cmsState.customPages || []).forEach(function (p) {
+      if (p && p.path) titleByPath[p.path] = p.title || p.path;
+    });
+    (cmsState.pages || []).forEach(function (path) {
+      var opt = document.createElement("option");
+      opt.value = "auto:" + path;
+      var nice;
+      if (path === "index.html") nice = "Home";
+      else if (path === "privacy.html") nice = "Privacy";
+      else if (path === "terms.html") nice = "Terms";
+      else if (path === "industries/index.html") nice = "Industries";
+      else if (path === "services/index.html") nice = "Services overview";
+      else if (path.indexOf("services/") === 0) {
+        nice =
+          "Service — " +
+          (titleByPath[path] ||
+            path
+              .replace(/^services\//, "")
+              .replace(/\.html$/i, "")
+              .replace(/-/g, " ")
+              .replace(/\b\w/g, function (c) {
+                return c.toUpperCase();
+              }));
+      } else {
+        nice = path
+          .replace(/\.html$/i, "")
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, function (c) {
+            return c.toUpperCase();
+          });
+      }
+      opt.textContent = nice;
+      group.appendChild(opt);
+    });
+    if (prev && $("cms-section")) {
+      $("cms-section").value = prev;
+    }
+  }
+
+  async function createServicePage() {
+    var titleEl = $("cms-new-title");
+    var descEl = $("cms-new-desc");
+    var imgEl = $("cms-new-image");
+    var st = $("cms-create-status");
+    var btn = $("cms-create-page");
+    var title = titleEl ? titleEl.value.trim() : "";
+    if (!title) {
+      if (st) st.textContent = "Enter a service name first.";
+      toast("Enter a service name first.", false);
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Creating…";
+    }
+    if (st) st.textContent = "Creating page…";
+    try {
+      var res = await Admin.api("POST", "/api/admin/pages/create", {
+        title: title,
+        description: descEl ? descEl.value.trim() : "",
+        imageUrl: imgEl ? imgEl.value.trim() : "",
+      });
+      cmsState.pages = res.pages || cmsState.pages;
+      if (res.page) {
+        cmsState.customPages = (cmsState.customPages || []).concat([res.page]);
+      }
+      fillCmsPageOptions();
+      if ($("cms-section") && res.page && res.page.path) {
+        $("cms-section").value = "auto:" + res.page.path;
+      }
+      if (titleEl) titleEl.value = "";
+      if (descEl) descEl.value = "";
+      if (imgEl) imgEl.value = "";
+      await renderCmsFields();
+      var url = res.url || (res.page && "/" + res.page.path) || "";
+      if (st) {
+        st.textContent =
+          "Created. Live at " + url + " — edit the fields below, then Save.";
+      }
+      toast("Service page created.", true);
+    } catch (ex) {
+      if (st) st.textContent = ex.message || "Could not create page.";
+      toast(ex.message || "Could not create page.", false);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Create service page";
+      }
+    }
+  }
+
+  function getCmsSectionKey() {
+    return ($("cms-section") && $("cms-section").value) || "branding";
+  }
+
+  function getCmsBucket(section) {
+    if (!cmsState.cms) return {};
+    if (!cmsState.cms[section]) cmsState.cms[section] = {};
+    return cmsState.cms[section];
+  }
+
+  function getCmsFieldDefs(section) {
+    if (!cmsState.fields) return [];
+    return cmsState.fields[section] || [];
+  }
+
+  function collectCmsFieldsIntoState() {
+    var section = getCmsSectionKey();
+    var wrap = $("cms-fields");
+    if (!wrap) return;
+    if (section.indexOf("auto:") === 0) {
+      wrap.querySelectorAll("[data-cms-key]").forEach(function (input) {
+        cmsState.autoValues[input.dataset.cmsKey] = input.value;
+      });
+      return;
+    }
+    if (section.indexOf("layout:") === 0) {
+      wrap.querySelectorAll("[data-cms-key]").forEach(function (input) {
+        cmsState.layoutValues[input.dataset.cmsKey] = input.value;
+      });
+      return;
+    }
+    var bucket = getCmsBucket(section);
+    wrap.querySelectorAll("[data-cms-key]").forEach(function (input) {
+      bucket[input.dataset.cmsKey] = input.value;
+    });
+  }
+
+  async function renderCmsFields() {
+    var wrap = $("cms-fields");
+    if (!wrap) return;
+    var section = getCmsSectionKey();
+    var filter = ($("cms-field-filter") && $("cms-field-filter").value) || "all";
+    wrap.innerHTML = "";
+
+    function appendField(def, value, parent) {
+      var host = parent || wrap;
+      var box = document.createElement("div");
+      box.className = "cms-field";
+      var id = "cms-field-" + String(def.key || def.id).replace(/[^a-z0-9]+/gi, "-");
+      var label = document.createElement("label");
+      label.className = "field-label";
+      label.setAttribute("for", id);
+      label.textContent = def.label || def.key;
+      box.appendChild(label);
+      if (def.hint) {
+        var hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = def.hint;
+        box.appendChild(hint);
+      } else if (def.type === "url") {
+        var hintUrl = document.createElement("p");
+        hintUrl.className = "hint";
+        hintUrl.textContent = "Paste a full image link";
+        box.appendChild(hintUrl);
+      }
+      var input;
+      if (def.type === "textarea") {
+        input = document.createElement("textarea");
+        input.rows = 3;
+      } else {
+        input = document.createElement("input");
+        input.type = "text";
+      }
+      input.id = id;
+      input.dataset.cmsKey = def.key || def.id;
+      input.value = value != null ? value : "";
+      input.placeholder =
+        def.type === "url"
+          ? "https://… or /assets/images/…"
+          : "Edit text…";
+      box.appendChild(input);
+      host.appendChild(box);
+    }
+
+    function ensureGroup(title, lastRef) {
+      if (title === lastRef.name) return lastRef.el;
+      var group = document.createElement("div");
+      group.className = "cms-group";
+      var heading = document.createElement("h4");
+      heading.className = "cms-group-heading";
+      heading.textContent = title;
+      group.appendChild(heading);
+      wrap.appendChild(group);
+      lastRef.name = title;
+      lastRef.el = group;
+      return group;
+    }
+
+    if (section.indexOf("layout:") === 0) {
+      var region = section.slice(7);
+      cmsState.layoutRegion = region;
+      var stL = $("cms-status");
+      if (stL) stL.textContent = "Scanning " + region + " menus…";
+      try {
+        var layoutScan = await Admin.api(
+          "GET",
+          "/api/admin/cms/layout-scan?region=" + encodeURIComponent(region)
+        );
+        cmsState.layoutFields = layoutScan.fields || [];
+        cmsState.layoutValues = {};
+        cmsState.layoutFields.forEach(function (f) {
+          cmsState.layoutValues[f.id] = f.value;
+        });
+        var showTextL = filter === "all" || filter === "text";
+        var showImagesL = filter === "all" || filter === "images";
+        var visibleL = cmsState.layoutFields.filter(function (f) {
+          if (f.kind === "text") return showTextL;
+          if (f.kind === "img") return showImagesL;
+          return false;
+        });
+        if (!visibleL.length) {
+          wrap.innerHTML =
+            '<p class="cms-empty">No menus or links found in the ' +
+            region +
+            ". The homepage needs a header or footer.</p>";
+        } else {
+          var metaL = document.createElement("p");
+          metaL.className = "cms-meta";
+          metaL.textContent = visibleL.length + " editable items found";
+          wrap.appendChild(metaL);
+          var lastRefL = { name: null, el: null };
+          visibleL.forEach(function (f) {
+            var groupEl = ensureGroup(f.group || region, lastRefL);
+            appendField(
+              {
+                key: f.id,
+                label: f.label,
+                type: f.type || (f.kind === "img" ? "url" : "text"),
+                hint: f.hint || "",
+              },
+              cmsState.layoutValues[f.id],
+              groupEl
+            );
+          });
+        }
+        if (stL) {
+          stL.textContent = "Edit labels below, then click Save to site.";
+        }
+      } catch (ex) {
+        wrap.innerHTML =
+          '<p class="cms-empty">Could not load menus: ' +
+          Admin.esc(ex.message || "error") +
+          "</p>";
+        if (stL) stL.textContent = ex.message || "Scan failed";
+      }
+      return;
+    }
+
+    if (section.indexOf("auto:") === 0) {
+      var path = section.slice(5);
+      cmsState.autoPath = path;
+      var st = $("cms-status");
+      if (st) st.textContent = "Scanning " + path + "…";
+      try {
+        var scanned = await Admin.api(
+          "GET",
+          "/api/admin/cms/scan?path=" + encodeURIComponent(path)
+        );
+        cmsState.autoFields = scanned.fields || [];
+        cmsState.autoValues = {};
+        cmsState.autoFields.forEach(function (f) {
+          cmsState.autoValues[f.id] = f.value;
+        });
+        var showText = filter === "all" || filter === "text";
+        var showImages = filter === "all" || filter === "images";
+        var visible = cmsState.autoFields.filter(function (f) {
+          if (f.kind === "text") return showText;
+          if (f.kind === "img") return showImages;
+          return false;
+        });
+
+        if (!visible.length) {
+          wrap.innerHTML =
+            '<p class="cms-empty">No fields found for this filter on this page.</p>';
+        } else {
+          var textCount = cmsState.autoFields.filter(function (f) {
+            return f.kind === "text";
+          }).length;
+          var imageCount = cmsState.autoFields.filter(function (f) {
+            return f.kind === "img";
+          }).length;
+          var meta = document.createElement("p");
+          meta.className = "cms-meta";
+          meta.textContent =
+            textCount + " text · " + imageCount + " images · grouped by section";
+          wrap.appendChild(meta);
+
+          var lastRef = { name: null, el: null };
+          visible.forEach(function (f) {
+            var groupEl = ensureGroup(f.group || "Page content", lastRef);
+            appendField(
+              {
+                key: f.id,
+                label: f.label,
+                type: f.type || (f.kind === "img" ? "url" : "text"),
+                hint:
+                  f.kind === "img"
+                    ? "Current: " +
+                      String(f.defaultValue || f.value || "").slice(0, 72)
+                    : f.hint,
+              },
+              cmsState.autoValues[f.id],
+              groupEl
+            );
+          });
+        }
+        if (st) {
+          st.textContent = "Edit the fields below, then click Save to site.";
+        }
+      } catch (ex) {
+        wrap.innerHTML =
+          '<p class="cms-empty">Scan failed: ' +
+          Admin.esc(ex.message || "error") +
+          "</p>";
+        if (st) st.textContent = ex.message || "Scan failed";
+      }
+      return;
+    }
+
+    var defs = getCmsFieldDefs(section);
+    var bucket = getCmsBucket(section);
+    if (!defs.length) {
+      wrap.innerHTML = '<p class="cms-empty">No fields for this section.</p>';
+      return;
+    }
+    var shown = 0;
+    var brandGroup = document.createElement("div");
+    brandGroup.className = "cms-group";
+    var brandHead = document.createElement("h4");
+    brandHead.className = "cms-group-heading";
+    brandHead.textContent =
+      section === "branding" ? "Branding" : section.charAt(0).toUpperCase() + section.slice(1);
+    brandGroup.appendChild(brandHead);
+    defs.forEach(function (def) {
+      if (filter === "images" && def.type !== "url") return;
+      if (filter === "text" && def.type === "url") return;
+      shown++;
+      appendField(def, bucket[def.key], brandGroup);
+    });
+    if (!shown) {
+      wrap.innerHTML = '<p class="cms-empty">Nothing matches this filter.</p>';
+    } else {
+      wrap.appendChild(brandGroup);
+    }
+    var stB = $("cms-status");
+    if (stB) stB.textContent = "Edit the fields below, then click Save to site.";
+  }
+
+  async function saveCms() {
+    collectCmsFieldsIntoState();
+    var btn = $("cms-save");
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      var section = getCmsSectionKey();
+      if (section.indexOf("auto:") === 0) {
+        var path = section.slice(5);
+        await Admin.api("PUT", "/api/admin/cms", {
+          autoPage: true,
+          path: path,
+          values: cmsState.autoValues,
+        });
+        toast("Page CMS saved for " + path + ". Refresh the website.", true);
+      } else if (section.indexOf("layout:") === 0) {
+        var region = section.slice(7);
+        var layoutRes = await Admin.api("PUT", "/api/admin/cms", {
+          layoutRegion: true,
+          region: region,
+          values: cmsState.layoutValues,
+        });
+        cmsState.cms = layoutRes.cms || cmsState.cms;
+        toast(
+          (region === "footer" ? "Footer" : "Header") +
+            " menus saved. Refresh the website.",
+          true
+        );
+      } else {
+        var res = await Admin.api("PUT", "/api/admin/cms", { cms: cmsState.cms });
+        cmsState.cms = res.cms || cmsState.cms;
+        toast("Sitewide CMS saved.", true);
+      }
+      var st = $("cms-status");
+      if (st) st.textContent = "Saved. Refresh the website to see changes.";
+    } catch (ex) {
+      toast(ex.message || "Unable to save CMS.", false);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save to site";
+    }
+  }
+
   async function loadLeads() {
     var data = await Admin.api("GET", "/api/admin/leads");
     state.leads = data.leads || [];
@@ -609,8 +1040,43 @@
       if (name === "posts") showPanel("posts");
       else showPanel(name);
       if (name === "settings") loadSettingsStatus();
+      if (name === "site-cms") {
+        loadCms().catch(function (ex) {
+          toast(ex.message || "Unable to load Site CMS.", false);
+        });
+      }
     });
   });
+
+  if ($("cms-section")) {
+    $("cms-section").addEventListener("change", function () {
+      collectCmsFieldsIntoState();
+      renderCmsFields();
+    });
+  }
+  if ($("cms-field-filter")) {
+    $("cms-field-filter").addEventListener("change", function () {
+      collectCmsFieldsIntoState();
+      renderCmsFields();
+    });
+  }
+  if ($("cms-reload")) {
+    $("cms-reload").addEventListener("click", function () {
+      loadCms().catch(function (ex) {
+        toast(ex.message || "Unable to reload CMS.", false);
+      });
+    });
+  }
+  if ($("cms-create-page")) {
+    $("cms-create-page").addEventListener("click", function () {
+      createServicePage();
+    });
+  }
+  if ($("cms-save")) {
+    $("cms-save").addEventListener("click", function () {
+      saveCms();
+    });
+  }
 
   $("menu-btn").addEventListener("click", openSidebar);
   $("sidebar-overlay").addEventListener("click", closeSidebar);

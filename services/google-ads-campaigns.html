@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-cms-page="services/google-ads-campaigns">
 
 <head>
   <meta charset="UTF-8" />
@@ -745,8 +745,8 @@
           </ol>
         </nav>
           <p class="mt-6 text-xs font-medium uppercase tracking-[0.22em] text-ink/45">Google Ads Campaigns</p>
-          <h1 class="svc-hero-title mt-4 font-serif tracking-tight">Turn Local Searches Into Your Next Customer.</h1>
-          <p class="svc-lead mt-6 max-w-xl">We build and manage focused Google Ads campaigns around the services you
+          <h1 data-cms="page.title" class="svc-hero-title mt-4 font-serif tracking-tight">Turn Local Searches Into Your Next Customer.</h1>
+          <p data-cms="page.lead" class="svc-lead mt-6 max-w-xl">We build and manage focused Google Ads campaigns around the services you
             offer, the locations you serve, and the actions that matter to your business.</p>
             <div class="mt-8 flex flex-wrap gap-3">
             <a href="#contact" class="rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper">Get My Free Assessment</a>
@@ -758,7 +758,7 @@
         <figure class="reveal overflow-hidden rounded-[1.75rem] border border-line shadow-lift lg:col-span-5">
           <picture>
             <source srcset="../assets/images/services/ads/hero.webp" type="image/webp" />
-            <img src="../assets/images/services/ads/hero.jpg"
+            <img data-cms-src="page.hero_image" src="../assets/images/services/ads/hero.jpg"
               alt="Customer on a sidewalk searching for a local service with a sponsored result on their phone"
               class="w-full object-cover" width="1152" height="864" loading="eager" fetchpriority="high" decoding="async" />
           </picture>
@@ -849,7 +849,7 @@
         <figure class="reveal overflow-hidden rounded-[1.75rem] border border-line shadow-lift lg:col-span-5">
           <picture>
             <source srcset="../assets/images/services/ads/problem.webp" type="image/webp" />
-            <img src="../assets/images/services/ads/problem.jpg"
+            <img data-cms-src="page.problem_image" src="../assets/images/services/ads/problem.jpg"
               alt="Business owner reviewing high ad click spend next to an empty leads notepad"
               class="w-full object-cover" width="1152" height="864" loading="lazy" decoding="async" />
           </picture>
@@ -1054,7 +1054,7 @@
           <article class="who-card">
             <picture>
               <source srcset="../assets/images/services/ads/ind-home.webp" type="image/webp" />
-              <img src="../assets/images/services/ads/ind-home.jpg"
+              <img data-cms-src="page.ind_1_image" src="../assets/images/services/ads/ind-home.jpg"
                 alt="Plumber repairing kitchen pipes for a homeowner" width="1152" height="864" loading="lazy"
                 decoding="async" />
             </picture>
@@ -1066,7 +1066,7 @@
           <article class="who-card">
             <picture>
               <source srcset="../assets/images/services/ads/ind-auto.webp" type="image/webp" />
-              <img src="../assets/images/services/ads/ind-auto.jpg" alt="Auto mechanic working under a car hood in a garage"
+              <img data-cms-src="page.ind_2_image" src="../assets/images/services/ads/ind-auto.jpg" alt="Auto mechanic working under a car hood in a garage"
                 width="1152" height="864" loading="lazy" decoding="async" />
             </picture>
             <div class="who-card-body">
@@ -1077,7 +1077,7 @@
           <article class="who-card">
             <picture>
               <source srcset="../assets/images/services/ads/ind-repair.webp" type="image/webp" />
-              <img src="../assets/images/services/ads/ind-repair.jpg"
+              <img data-cms-src="page.ind_3_image" src="../assets/images/services/ads/ind-repair.jpg"
                 alt="Technician on a ladder installing wall-mounted equipment" width="1152" height="864" loading="lazy"
                 decoding="async" />
             </picture>
@@ -1090,7 +1090,7 @@
           <article class="who-card">
             <picture>
               <source srcset="../assets/images/services/ads/ind-clean.webp" type="image/webp" />
-              <img src="../assets/images/services/ads/ind-clean.jpg"
+              <img data-cms-src="page.ind_4_image" src="../assets/images/services/ads/ind-clean.jpg"
                 alt="Professional cleaner vacuuming a residential living room" width="1152" height="864" loading="lazy"
                 decoding="async" />
             </picture>
@@ -1103,7 +1103,7 @@
           <article class="who-card">
             <picture>
               <source srcset="../assets/images/services/ads/ind-personal.webp" type="image/webp" />
-              <img src="../assets/images/services/ads/ind-personal.jpg" alt="Ladies salon stylist styling a female client's hair"
+              <img data-cms-src="page.ind_5_image" src="../assets/images/services/ads/ind-personal.jpg" alt="Ladies salon stylist styling a female client's hair"
                 width="1152" height="864" loading="lazy" decoding="async" />
             </picture>
             <div class="who-card-body">
@@ -1114,7 +1114,7 @@
           <article class="who-card">
             <picture>
               <source srcset="../assets/images/services/ads/ind-local.webp" type="image/webp" />
-              <img src="../assets/images/services/ads/ind-local.jpg" alt="Local cafe owner serving a customer at the counter"
+              <img data-cms-src="page.ind_6_image" src="../assets/images/services/ads/ind-local.jpg" alt="Local cafe owner serving a customer at the counter"
                 width="1152" height="864" loading="lazy" decoding="async" />
             </picture>
             <div class="who-card-body">
@@ -1488,7 +1488,7 @@
         <figure class="reveal overflow-hidden rounded-[1.75rem] border border-line shadow-lift lg:col-span-6">
           <picture>
             <source srcset="../assets/images/services/ads/cta.webp" type="image/webp" />
-            <img src="../assets/images/services/ads/cta.jpg"
+            <img data-cms-src="page.cta_image" src="../assets/images/services/ads/cta.jpg"
               alt="Local business owner taking a new customer enquiry call and writing notes"
               class="w-full object-cover" width="1152" height="864" loading="lazy" decoding="async" />
           </picture>
@@ -1611,6 +1611,7 @@
   </footer>
 
   <script src="../assets/site.js"></script>
+  <script src="../assets/cms.js"></script>
 </body>
 
 </html>

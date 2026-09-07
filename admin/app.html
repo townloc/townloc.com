@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,22 +8,23 @@
   <title>Townloc Admin</title>
   <link rel="stylesheet" href="admin.css" />
 </head>
+
 <body>
   <div class="overlay" id="sidebar-overlay" hidden></div>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar" aria-label="Admin navigation">
       <div class="sidebar-brand">
-        <span class="mark">G</span>
         <span>Townloc Admin</span>
       </div>
       <nav>
         <button type="button" class="nav-item active" data-nav="dashboard">Dashboard</button>
         <button type="button" class="nav-item" data-nav="leads">Leads</button>
         <button type="button" class="nav-item" data-nav="posts">Posts</button>
-        <button type="button" class="nav-item" data-nav="pages">Pages</button>
+        <button type="button" class="nav-item" data-nav="site-cms">Site CMS</button>
         <button type="button" class="nav-item" data-nav="settings">Settings</button>
+        <button type="button" class="nav-item nav-item-muted" data-nav="pages" title="For developers">Advanced</button>
       </nav>
-      <div class="sidebar-foot">CMS · contact API connected</div>
+      <div class="sidebar-foot">Edit your website easily</div>
     </aside>
 
     <div class="main">
@@ -40,18 +42,36 @@
         <!-- Dashboard -->
         <section id="panel-dashboard" class="panel active">
           <div class="stats">
-            <div class="stat-card"><p class="label">Total Leads</p><p class="value" id="stat-leads-total">0</p></div>
-            <div class="stat-card"><p class="label">New Leads</p><p class="value" id="stat-leads-new">0</p></div>
-            <div class="stat-card"><p class="label">Published Posts</p><p class="value" id="stat-posts-pub">0</p></div>
-            <div class="stat-card"><p class="label">Draft Posts</p><p class="value" id="stat-posts-draft">0</p></div>
+            <div class="stat-card">
+              <p class="label">Total Leads</p>
+              <p class="value" id="stat-leads-total">0</p>
+            </div>
+            <div class="stat-card">
+              <p class="label">New Leads</p>
+              <p class="value" id="stat-leads-new">0</p>
+            </div>
+            <div class="stat-card">
+              <p class="label">Published Posts</p>
+              <p class="value" id="stat-posts-pub">0</p>
+            </div>
+            <div class="stat-card">
+              <p class="label">Draft Posts</p>
+              <p class="value" id="stat-posts-draft">0</p>
+            </div>
           </div>
           <div class="grid-2">
             <div class="card">
-              <div class="card-header"><h2>Recent Leads</h2><button type="button" class="btn btn-ghost btn-sm" data-nav="leads">View all</button></div>
+              <div class="card-header">
+                <h2>Recent Leads</h2><button type="button" class="btn btn-ghost btn-sm" data-nav="leads">View
+                  all</button>
+              </div>
               <div id="dash-leads"></div>
             </div>
             <div class="card">
-              <div class="card-header"><h2>Recent Posts</h2><button type="button" class="btn btn-ghost btn-sm" data-nav="posts">View all</button></div>
+              <div class="card-header">
+                <h2>Recent Posts</h2><button type="button" class="btn btn-ghost btn-sm" data-nav="posts">View
+                  all</button>
+              </div>
               <div id="dash-posts"></div>
             </div>
           </div>
@@ -80,14 +100,21 @@
               <table class="data">
                 <thead>
                   <tr>
-                    <th>Name</th><th>Email</th><th>Phone</th><th>Business</th>
-                    <th>Service</th><th>Status</th><th>Created</th><th>Actions</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Business</th>
+                    <th>Service</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="leads-body"></tbody>
               </table>
             </div>
-            <div id="leads-empty" class="empty" hidden><strong>No leads yet</strong>New form submissions will appear here.</div>
+            <div id="leads-empty" class="empty" hidden><strong>No leads yet</strong>New form submissions will appear
+              here.</div>
           </div>
         </section>
 
@@ -104,7 +131,13 @@
             <div class="table-wrap">
               <table class="data">
                 <thead>
-                  <tr><th>Title</th><th>Slug</th><th>Status</th><th>Updated</th><th>Actions</th></tr>
+                  <tr>
+                    <th>Title</th>
+                    <th>Slug</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
                 <tbody id="posts-body"></tbody>
               </table>
@@ -112,7 +145,8 @@
             <div id="posts-empty" class="empty" hidden>
               <strong>No posts yet</strong>
               Create your first blog post to publish on /blog/.
-              <div style="margin-top:0.75rem"><button type="button" class="btn btn-primary btn-sm" id="new-post-empty">New Post</button></div>
+              <div style="margin-top:0.75rem"><button type="button" class="btn btn-primary btn-sm"
+                  id="new-post-empty">New Post</button></div>
             </div>
           </div>
         </section>
@@ -147,7 +181,8 @@
             <label class="field-label" for="post-featured">Featured image URL</label>
             <input id="post-featured" type="url" placeholder="https://…" />
             <div class="form-actions" style="margin-top:0.5rem">
-              <button type="button" class="btn btn-secondary btn-sm" id="update-featured-preview">Update Preview</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="update-featured-preview">Update
+                Preview</button>
               <button type="button" class="btn btn-danger btn-sm" id="remove-featured">Remove Image</button>
             </div>
             <div class="image-preview" id="featured-preview">
@@ -162,7 +197,8 @@
             <textarea id="post-body" class="body"></textarea>
 
             <details class="seo-details">
-              <summary class="section-title" style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:0.5rem">
+              <summary class="section-title"
+                style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:0.5rem">
                 SEO <span class="hint" style="font-weight:400">(meta title, description, OG image)</span>
               </summary>
               <label class="field-label" for="post-meta-title">Meta title</label>
@@ -188,8 +224,88 @@
           </div>
         </section>
 
-        <!-- Pages -->
+        <!-- Site CMS -->
+        <section id="panel-site-cms" class="panel">
+          <div class="cms-shell">
+            <header class="cms-topbar">
+              <div class="cms-topbar-copy">
+                <h2 class="cms-title">Site CMS</h2>
+                <p class="cms-lead">Edit site text, images, and menus. Changes go live after you save.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="cms-save">Save to site</button>
+            </header>
+
+            <div class="cms-block">
+              <div class="cms-block-head">
+                <h3 class="cms-block-title">1. Choose what to edit</h3>
+                <p class="cms-block-hint">Pick branding, header, footer, or any website page.</p>
+              </div>
+              <div class="cms-toolbar">
+                <div class="cms-toolbar-main">
+                  <label class="cms-inline-label" for="cms-section">Content</label>
+                  <select id="cms-section" class="cms-select">
+                    <optgroup label="Sitewide">
+                      <option value="branding">Branding — logo, name, favicon</option>
+                      <option value="layout:header">Header — menus &amp; buttons</option>
+                      <option value="layout:footer">Footer — menus &amp; text</option>
+                    </optgroup>
+                    <optgroup label="Website pages" id="cms-auto-pages"></optgroup>
+                  </select>
+                </div>
+                <div class="cms-toolbar-side">
+                  <label class="cms-inline-label" for="cms-field-filter">Show</label>
+                  <select id="cms-field-filter" class="cms-select cms-select-sm">
+                    <option value="all" selected>Text + images</option>
+                    <option value="text">Text only</option>
+                    <option value="images">Images only</option>
+                  </select>
+                  <button type="button" class="btn btn-secondary btn-sm" id="cms-reload">Refresh</button>
+                </div>
+              </div>
+            </div>
+
+            <details class="cms-block cms-add-page">
+              <summary class="cms-add-summary">
+                <span class="cms-block-title">Add a new service page</span>
+                <span class="cms-block-hint">Optional — create another service from the template</span>
+              </summary>
+              <div class="cms-add-body">
+                <div class="form-row">
+                  <div>
+                    <label class="field-label" for="cms-new-title">Service name</label>
+                    <input type="text" id="cms-new-title" placeholder="e.g. Citation Building" maxlength="120" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="cms-new-image">Image link (optional)</label>
+                    <input type="text" id="cms-new-image" placeholder="https://… or /assets/images/…" maxlength="500" />
+                  </div>
+                </div>
+                <label class="field-label" for="cms-new-desc">Short description (optional)</label>
+                <textarea id="cms-new-desc" rows="2" placeholder="One or two sentences about this service" maxlength="500"></textarea>
+                <div class="form-actions" style="margin-top:0.75rem">
+                  <button type="button" class="btn btn-secondary" id="cms-create-page">Create service page</button>
+                </div>
+                <p id="cms-create-status" class="hint" style="margin:0.5rem 0 0"></p>
+              </div>
+            </details>
+
+            <div class="cms-block cms-block-fields">
+              <div class="cms-block-head">
+                <h3 class="cms-block-title">2. Edit fields</h3>
+                <p class="cms-block-hint" id="cms-status">Select content above to load editable fields.</p>
+              </div>
+              <div id="cms-fields" class="cms-fields"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Advanced: raw HTML (not for normal CMS use) -->
         <section id="panel-pages" class="panel">
+          <div class="card" style="margin-bottom:1rem">
+            <p class="hint" style="margin:0">
+              For developers only. Day-to-day edits: use <em>Site CMS</em>.
+            </p>
+          </div>
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
@@ -198,7 +314,14 @@
               </div>
               <div class="table-wrap">
                 <table class="data">
-                  <thead><tr><th>Path</th><th>Saved</th><th>Updated</th><th></th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Path</th>
+                      <th>Saved</th>
+                      <th>Updated</th>
+                      <th></th>
+                    </tr>
+                  </thead>
                   <tbody id="pages-body"></tbody>
                 </table>
               </div>
@@ -230,7 +353,8 @@
 
             <p class="section-title">Admin session</p>
             <p class="hint" style="margin:0">Status: <span class="badge badge-published">Logged in</span></p>
-            <p class="hint" style="margin:0.35rem 0 0">The session token stays in this browser only. Secrets are never shown here.</p>
+            <p class="hint" style="margin:0.35rem 0 0">The session token stays in this browser only. Secrets are never
+              shown here.</p>
             <div class="form-actions">
               <button type="button" class="btn btn-danger" id="settings-logout">Log out</button>
             </div>
@@ -249,7 +373,8 @@
               <p style="margin:0" class="hint">Checking status…</p>
             </div>
             <p class="hint" style="margin-top:0.75rem">
-              Tokens are never shown here. Configure <code>GITHUB_REPO</code> and <code>GITHUB_TOKEN</code> on the Worker to enable publish.
+              Tokens are never shown here. Configure <code>GITHUB_REPO</code> and <code>GITHUB_TOKEN</code> on the
+              Worker to enable publish.
             </p>
           </div>
         </section>
@@ -290,4 +415,5 @@
   <script src="admin.js"></script>
   <script src="admin-app.js"></script>
 </body>
+
 </html>

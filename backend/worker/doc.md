@@ -78,6 +78,11 @@ project/
 
 **Copy for a new project:** `backend/worker/` + `admin/`
 
+Site CMS auto-scans each HTML page’s `<main>` for headings, paragraphs, and images.  
+No hand-built per-page field list required — connect the Worker to the frontend assets and pages appear in Admin.
+
+Configure `wrangler.toml`, create a new D1 database, set secrets, put HTML under the assets root, deploy.
+
 ---
 
 ## What you do on a NEW project (step by step)

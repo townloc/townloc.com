@@ -2,7 +2,28 @@
  * Townloc — Contact API + Admin CMS
  * POST /api/contact
  * Public posts + admin leads/posts/pages
+ * Site CMS: GET /api/cms , GET|PUT /api/admin/cms
  */
+
+import { CMS_DEFAULTS, CMS_FIELD_META, deepMerge } from "./cmsDefaults.js";
+import {
+  htmlPathFromUrl,
+  extractEditables,
+  applyEditables,
+  mergeFieldValues,
+} from "./cmsAuto.js";
+import {
+  slugifyTitle,
+  buildServicePageHtml,
+  injectCustomServiceNav,
+  injectCustomServiceCards,
+} from "./pageTemplate.js";
+import {
+  extractLayoutEditables,
+  applyAllLayout,
+} from "./cmsLayout.js";
+
+const LAYOUT_SOURCE = "index.html";
 
 const MAX = {
   clientName: 120,
@@ -39,6 +60,53 @@ const PAGE_ALLOWLIST = [
 ];
 
 const PAGE_ALLOWLIST_SET = new Set(PAGE_ALLOWLIST);
+
+function customPagesFromDoc(doc) {
+  return Array.isArray(doc && doc.customPages) ? doc.customPages : [];
+}
+
+function editablePagePaths(doc) {
+  const paths = [...PAGE_ALLOWLIST];
+  const seen = new Set(paths);
+  for (const page of customPagesFromDoc(doc)) {
+    const p = page && page.path ? String(page.path).replace(/^\/+/, "") : "";
+    if (p && !seen.has(p)) {
+      seen.add(p);
+      paths.push(p);
+    }
+  }
+  return paths;
+}
+
+function isEditablePage(path, doc) {
+  const p = String(path || "").replace(/^\/+/, "");
+  if (PAGE_ALLOWLIST_SET.has(p)) return true;
+  return customPagesFromDoc(doc).some((x) => x && x.path === p);
+}
+
+async function writeCmsDocument(env, data) {
+  await ensureSiteCms(env);
+  await env.DB.prepare(
+    `INSERT INTO site_cms (id, data, updated_at) VALUES (1, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = datetime('now')`
+  )
+    .bind(JSON.stringify(data))
+    .run();
+}
+
+async function readPageHtml(env, path) {
+  const p = String(path || "").replace(/^\/+/, "");
+  const row = await env.DB.prepare(`SELECT html FROM pages WHERE path = ?`)
+    .bind(p)
+    .first();
+  if (row && typeof row.html === "string" && row.html.length) {
+    return row.html;
+  }
+  if (!env.ASSETS) return null;
+  const assetRes = await env.ASSETS.fetch(new Request(`https://scan.local/${p}`));
+  if (!assetRes.ok) return null;
+  return assetRes.text();
+}
 
 /* ── Rate-limit store (in-memory, per-isolate) ── */
 const ipSubmissions = new Map();
@@ -813,24 +881,28 @@ async function handleAdminPostDelete(env, origin, id) {
 /* ── Admin pages + GitHub publish ── */
 
 async function handleAdminPagesList(env, origin) {
+  const doc = await readCmsDocument(env);
   const { results } = await env.DB.prepare(
     `SELECT path, updated_at, length(html) AS html_length FROM pages`
   ).all();
   const byPath = {};
   for (const row of results || []) byPath[row.path] = row;
 
-  const pages = PAGE_ALLOWLIST.map((path) => ({
+  const paths = editablePagePaths(doc);
+  const pages = paths.map((path) => ({
     path,
     saved: Boolean(byPath[path]),
     updated_at: byPath[path] ? byPath[path].updated_at : null,
     html_length: byPath[path] ? byPath[path].html_length : 0,
+    custom: !PAGE_ALLOWLIST_SET.has(path),
   }));
 
   return json({ success: true, pages }, 200, origin);
 }
 
 async function handleAdminPageGet(env, origin, path) {
-  if (!PAGE_ALLOWLIST_SET.has(path)) {
+  const doc = await readCmsDocument(env);
+  if (!isEditablePage(path, doc)) {
     return json({ success: false, message: "Path not allowed." }, 400, origin);
   }
   const row = await env.DB.prepare(
@@ -857,7 +929,8 @@ async function handleAdminPageSave(request, env, origin) {
   }
 
   const path = typeof body.path === "string" ? body.path.trim() : "";
-  if (!PAGE_ALLOWLIST_SET.has(path)) {
+  const doc = await readCmsDocument(env);
+  if (!isEditablePage(path, doc)) {
     return json({ success: false, message: "Path not allowed." }, 400, origin);
   }
   const html = typeof body.html === "string" ? body.html : "";
@@ -873,6 +946,126 @@ async function handleAdminPageSave(request, env, origin) {
     .run();
 
   return json({ success: true }, 200, origin);
+}
+
+async function handleAdminPageCreate(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  if (!title || title.length < 2) {
+    return json(
+      { success: false, message: "Please enter a service name." },
+      400,
+      origin
+    );
+  }
+  if (title.length > 120) {
+    return json({ success: false, message: "Service name is too long." }, 400, origin);
+  }
+
+  const description =
+    typeof body.description === "string" ? body.description.trim().slice(0, 500) : "";
+  const imageUrl =
+    typeof body.imageUrl === "string" ? body.imageUrl.trim().slice(0, 500) : "";
+  let slug =
+    typeof body.slug === "string" && body.slug.trim()
+      ? slugifyTitle(body.slug.trim())
+      : slugifyTitle(title);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    return json(
+      { success: false, message: "Use a simple URL name (letters and numbers)." },
+      400,
+      origin
+    );
+  }
+
+  const path = `services/${slug}.html`;
+  const doc = await readCmsDocument(env);
+  if (isEditablePage(path, doc)) {
+    return json(
+      {
+        success: false,
+        message: "A page with this name already exists. Try a different name.",
+      },
+      409,
+      origin
+    );
+  }
+
+  const existing = await env.DB.prepare(`SELECT path FROM pages WHERE path = ?`)
+    .bind(path)
+    .first();
+  if (existing) {
+    return json(
+      {
+        success: false,
+        message: "A page with this name already exists. Try a different name.",
+      },
+      409,
+      origin
+    );
+  }
+
+  if (!env.ASSETS) {
+    return json({ success: false, message: "ASSETS binding missing." }, 500, origin);
+  }
+  const tplRes = await env.ASSETS.fetch(
+    new Request("https://scan.local/services/local-seo.html")
+  );
+  if (!tplRes.ok) {
+    return json(
+      { success: false, message: "Could not load service template." },
+      500,
+      origin
+    );
+  }
+  const templateHtml = await tplRes.text();
+  const html = buildServicePageHtml(templateHtml, {
+    title,
+    slug,
+    description,
+    imageUrl,
+  });
+  if (html.length > 2_000_000) {
+    return json({ success: false, message: "HTML too large." }, 400, origin);
+  }
+
+  await env.DB.prepare(
+    `INSERT INTO pages (path, html, updated_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(path) DO UPDATE SET html = excluded.html, updated_at = datetime('now')`
+  )
+    .bind(path, html)
+    .run();
+
+  const entry = {
+    path,
+    title,
+    description,
+    imageUrl,
+    created_at: new Date().toISOString(),
+  };
+  const customPages = [...customPagesFromDoc(doc), entry];
+  const merged = deepMerge(CMS_DEFAULTS, { ...doc, customPages });
+  merged.customPages = customPages;
+  if (doc.autoPages) merged.autoPages = doc.autoPages;
+  if (doc.layout) merged.layout = doc.layout;
+  await writeCmsDocument(env, merged);
+
+  return json(
+    {
+      success: true,
+      page: entry,
+      url: `/${path}`,
+      pages: editablePagePaths(merged),
+    },
+    201,
+    origin
+  );
 }
 
 async function githubGetFileSha(env, path) {
@@ -943,7 +1136,8 @@ async function handleAdminPagePublish(request, env, origin) {
   }
 
   const path = typeof body.path === "string" ? body.path.trim() : "";
-  if (!PAGE_ALLOWLIST_SET.has(path)) {
+  const doc = await readCmsDocument(env);
+  if (!isEditablePage(path, doc)) {
     return json({ success: false, message: "Path not allowed." }, 400, origin);
   }
 
@@ -1002,6 +1196,268 @@ async function handleAdminPagePublish(request, env, origin) {
   );
 }
 
+/* ── Site CMS (branding / header / footer / page text + image URLs) ── */
+
+async function ensureSiteCms(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS site_cms (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      data TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`
+  ).run();
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO site_cms (id, data) VALUES (1, '{}')`
+  ).run();
+}
+
+async function readCmsDocument(env) {
+  await ensureSiteCms(env);
+  const row = await env.DB.prepare(`SELECT data FROM site_cms WHERE id = 1`).first();
+  let stored = {};
+  try {
+    stored = row && row.data ? JSON.parse(row.data) : {};
+  } catch {
+    stored = {};
+  }
+  return deepMerge(CMS_DEFAULTS, stored);
+}
+
+async function handlePublicCms(env, origin) {
+  const data = await readCmsDocument(env);
+  return json({ success: true, cms: data }, 200, origin);
+}
+
+async function handleAdminCmsGet(env, origin) {
+  const data = await readCmsDocument(env);
+  return json(
+    {
+      success: true,
+      cms: data,
+      fields: CMS_FIELD_META,
+      pages: editablePagePaths(data),
+      customPages: customPagesFromDoc(data),
+      mode: "auto+sitewide",
+    },
+    200,
+    origin
+  );
+}
+
+async function handleAdminCmsScan(env, origin, pagePath) {
+  const path = String(pagePath || "").replace(/^\/+/, "");
+  const doc = await readCmsDocument(env);
+  if (!isEditablePage(path, doc)) {
+    return json({ success: false, message: "Page not available." }, 400, origin);
+  }
+  const html = await readPageHtml(env, path);
+  if (!html) {
+    return json(
+      { success: false, message: `Could not read ${path}.` },
+      404,
+      origin
+    );
+  }
+  const discovered = extractEditables(html);
+  const overrides =
+    (doc.autoPages && doc.autoPages[path] && typeof doc.autoPages[path] === "object"
+      ? doc.autoPages[path]
+      : {}) || {};
+  const fields = mergeFieldValues(discovered, overrides);
+  return json(
+    {
+      success: true,
+      path,
+      fields,
+      counts: {
+        total: fields.length,
+        images: fields.filter((f) => f.kind === "img").length,
+        text: fields.filter((f) => f.kind === "text").length,
+      },
+    },
+    200,
+    origin
+  );
+}
+
+async function handleAdminCmsLayoutScan(env, origin, region) {
+  const r = String(region || "").toLowerCase() === "footer" ? "footer" : "header";
+  const html = await readPageHtml(env, LAYOUT_SOURCE);
+  if (!html) {
+    return json(
+      {
+        success: false,
+        message: `Could not read layout source (${LAYOUT_SOURCE}).`,
+      },
+      404,
+      origin
+    );
+  }
+  const discovered = extractLayoutEditables(html, r);
+  const doc = await readCmsDocument(env);
+  const overrides =
+    (doc.layout && doc.layout[r] && typeof doc.layout[r] === "object"
+      ? doc.layout[r]
+      : {}) || {};
+  const fields = mergeFieldValues(discovered, overrides);
+  return json(
+    {
+      success: true,
+      region: r,
+      source: LAYOUT_SOURCE,
+      fields,
+      counts: {
+        total: fields.length,
+        images: fields.filter((f) => f.kind === "img").length,
+        text: fields.filter((f) => f.kind === "text").length,
+      },
+    },
+    200,
+    origin
+  );
+}
+
+async function handleAdminCmsPut(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+
+  // Auto page overrides: { path, values: { "img:0": "...", "text:1": "..." } }
+  if (body && body.autoPage && body.path) {
+    const path = String(body.path).replace(/^\/+/, "");
+    const current = await readCmsDocument(env);
+    if (!isEditablePage(path, current)) {
+      return json({ success: false, message: "Page not available." }, 400, origin);
+    }
+    const values =
+      body.values && typeof body.values === "object" ? body.values : {};
+    const autoPages = {
+      ...(current.autoPages && typeof current.autoPages === "object"
+        ? current.autoPages
+        : {}),
+      [path]: values,
+    };
+    const merged = deepMerge(CMS_DEFAULTS, { ...current, autoPages });
+    merged.autoPages = autoPages;
+    merged.customPages = customPagesFromDoc(current);
+    if (current.layout) merged.layout = current.layout;
+    await writeCmsDocument(env, merged);
+    return json({ success: true, cms: merged, path }, 200, origin);
+  }
+
+  // Auto layout (header/footer menus): { layoutRegion: true, region, values }
+  if (body && body.layoutRegion && body.region) {
+    const region = String(body.region).toLowerCase() === "footer" ? "footer" : "header";
+    const current = await readCmsDocument(env);
+    const values =
+      body.values && typeof body.values === "object" ? body.values : {};
+    const layout = {
+      ...(current.layout && typeof current.layout === "object" ? current.layout : {}),
+      header:
+        current.layout && typeof current.layout.header === "object"
+          ? current.layout.header
+          : {},
+      footer:
+        current.layout && typeof current.layout.footer === "object"
+          ? current.layout.footer
+          : {},
+      [region]: values,
+    };
+    const merged = deepMerge(CMS_DEFAULTS, { ...current, layout });
+    merged.layout = layout;
+    merged.customPages = customPagesFromDoc(current);
+    if (current.autoPages) merged.autoPages = current.autoPages;
+    await writeCmsDocument(env, merged);
+    return json({ success: true, cms: merged, region }, 200, origin);
+  }
+
+  const incoming = body && body.cms && typeof body.cms === "object" ? body.cms : body;
+  if (!incoming || typeof incoming !== "object") {
+    return json({ success: false, message: "Missing cms payload." }, 400, origin);
+  }
+  const current = await readCmsDocument(env);
+  const merged = deepMerge(CMS_DEFAULTS, incoming);
+  if (incoming.autoPages) merged.autoPages = incoming.autoPages;
+  if (incoming.layout) merged.layout = incoming.layout;
+  else if (current.layout) merged.layout = current.layout;
+  if (incoming.customPages) merged.customPages = incoming.customPages;
+  else merged.customPages = customPagesFromDoc(current);
+  await writeCmsDocument(env, merged);
+  return json({ success: true, cms: merged }, 200, origin);
+}
+
+async function serveAssetWithCms(request, env) {
+  const url = new URL(request.url);
+  const pagePath = htmlPathFromUrl(url.pathname);
+  const looksHtml =
+    url.pathname.endsWith(".html") ||
+    url.pathname === "/" ||
+    url.pathname.endsWith("/");
+
+  let html = null;
+  let status = 200;
+  let baseHeaders = new Headers({
+    "content-type": "text/html; charset=utf-8",
+  });
+
+  if (looksHtml && env.DB) {
+    try {
+      const row = await env.DB.prepare(`SELECT html FROM pages WHERE path = ?`)
+        .bind(pagePath)
+        .first();
+      if (row && typeof row.html === "string" && row.html.length) {
+        html = row.html;
+      }
+    } catch (err) {
+      console.error("D1 page read failed", err);
+    }
+  }
+
+  const res = await env.ASSETS.fetch(request);
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  const isHtml =
+    looksHtml ||
+    ct.includes("text/html");
+
+  if (html == null) {
+    if (!isHtml || !res.ok) return res;
+    html = await res.text();
+    status = res.status;
+    baseHeaders = new Headers(res.headers);
+  }
+
+  try {
+    const doc = await readCmsDocument(env);
+    const customPages = customPagesFromDoc(doc);
+    const overrides =
+      doc.autoPages && doc.autoPages[pagePath] ? doc.autoPages[pagePath] : null;
+    if (overrides) html = applyEditables(html, overrides);
+    // Sitewide header/footer menus (auto) — before injecting custom services
+    html = applyAllLayout(html, doc.layout);
+    html = injectCustomServiceNav(html, customPages, pagePath);
+    html = injectCustomServiceCards(html, customPages, pagePath);
+
+    if (doc.branding && doc.branding.faviconUrl) {
+      const fav = String(doc.branding.faviconUrl).trim();
+      if (fav && /rel=["']icon["']/i.test(html)) {
+        html = html.replace(
+          /(<link[^>]*rel=["']icon["'][^>]*href=["'])([^"']*)(["'])/i,
+          `$1${fav}$3`
+        );
+      }
+    }
+  } catch (err) {
+    console.error("CMS apply failed", err);
+  }
+
+  baseHeaders.set("cache-control", "no-store");
+  baseHeaders.set("content-type", "text/html; charset=utf-8");
+  return new Response(html, { status, headers: baseHeaders });
+}
+
 /* ── Admin router ── */
 
 async function handleAdmin(request, env, origin, url) {
@@ -1013,6 +1469,21 @@ async function handleAdmin(request, env, origin, url) {
 
   const auth = await requireAdmin(request, env, origin);
   if (!auth.ok) return auth.response;
+
+  if (path === "/api/admin/cms" && request.method === "GET") {
+    return handleAdminCmsGet(env, origin);
+  }
+  if (path === "/api/admin/cms" && request.method === "PUT") {
+    return handleAdminCmsPut(request, env, origin);
+  }
+  if (path === "/api/admin/cms/scan" && request.method === "GET") {
+    const pagePath = url.searchParams.get("path") || "index.html";
+    return handleAdminCmsScan(env, origin, pagePath);
+  }
+  if (path === "/api/admin/cms/layout-scan" && request.method === "GET") {
+    const region = url.searchParams.get("region") || "header";
+    return handleAdminCmsLayoutScan(env, origin, region);
+  }
 
   if (path === "/api/admin/settings" && request.method === "GET") {
     const repo = String(env.GITHUB_REPO || "").trim();
@@ -1070,6 +1541,9 @@ async function handleAdmin(request, env, origin, url) {
   }
   if (path === "/api/admin/pages" && request.method === "PUT") {
     return handleAdminPageSave(request, env, origin);
+  }
+  if (path === "/api/admin/pages/create" && request.method === "POST") {
+    return handleAdminPageCreate(request, env, origin);
   }
   if (path === "/api/admin/pages/publish" && request.method === "POST") {
     return handleAdminPagePublish(request, env, origin);
@@ -1140,6 +1614,13 @@ export default {
         );
       }
 
+      if (
+        (url.pathname === "/api/cms" || url.pathname === "/api/cms/") &&
+        request.method === "GET"
+      ) {
+        return await handlePublicCms(env, origin);
+      }
+
       if (url.pathname === "/api" || url.pathname === "/api/") {
         return json(
           {
@@ -1149,7 +1630,11 @@ export default {
               "POST /api/contact",
               "GET /api/posts",
               "GET /api/posts/:slug",
+              "GET /api/cms",
+              "GET /api/admin/cms/scan?path=",
               "POST /api/admin/login",
+              "GET|PUT /api/admin/cms",
+              "POST /api/admin/pages/create",
             ],
           },
           200,
@@ -1159,7 +1644,7 @@ export default {
 
       // Non-/api requests are served by Workers static assets (see wrangler.toml).
       if (env.ASSETS) {
-        return env.ASSETS.fetch(request);
+        return serveAssetWithCms(request, env);
       }
 
       return json({ success: false, message: "Not found." }, 404, origin);

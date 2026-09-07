@@ -24,9 +24,9 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
     return f"""  <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-white/10 text-paper">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8" aria-label="Primary">
       <a href="{home}" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
-        <span
+        <span data-cms="brand.mark"
           class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
-        <span class="text-[15px] font-semibold tracking-tight">Townloc</span>
+        <span data-cms="brand.name" class="text-[15px] font-semibold tracking-tight">Townloc</span>
       </a>
       <ul class="hidden items-center gap-8 text-sm md:flex">
         <li class="nav-drop relative">
