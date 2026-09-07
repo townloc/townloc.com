@@ -1,7 +1,7 @@
-/* GglMap Admin API client */
+/* Townloc Admin API client */
 (function (global) {
   var API_BASE = "";
-  var TOKEN_KEY = "gglmap_admin_token";
+  var TOKEN_KEY = "townloc_admin_token";
 
   function getToken() {
     try {

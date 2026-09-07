@@ -1,4 +1,4 @@
-/* GglMap Admin app — dashboard UI logic */
+/* Townloc Admin app — dashboard UI logic */
 (function () {
   if (!Admin.getToken()) {
     location.href = "index.html";
@@ -144,7 +144,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "gglmap-leads-" + day + ".csv";
+    a.download = "townloc-leads-" + day + ".csv";
     document.body.appendChild(a);
     a.click();
     a.remove();

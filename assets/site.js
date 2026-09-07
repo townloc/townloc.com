@@ -406,10 +406,10 @@
         }
 
         try {
-          var existing = JSON.parse(localStorage.getItem("northline-contracts") || "[]");
+          var existing = JSON.parse(localStorage.getItem("townloc-contracts") || "[]");
           if (!Array.isArray(existing)) existing = [];
           existing.push(data);
-          localStorage.setItem("northline-contracts", JSON.stringify(existing));
+          localStorage.setItem("townloc-contracts", JSON.stringify(existing));
         } catch (err) {
           /* Ignore storage failures; the request already reached the API. */
         }

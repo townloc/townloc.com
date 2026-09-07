@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Post | GglMap Blog</title>
+  <title>Post | Townloc Blog</title>
   <meta name="robots" content="index, follow" />
   <link rel="icon"
-    href="/assets/images/gglmap-favicon.png" />
+    href="/assets/images/townloc-favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -27,7 +27,7 @@
       <a href="../index.html" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
         <span
           class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
-        <span class="text-[15px] font-semibold tracking-tight">GglMap</span>
+        <span class="text-[15px] font-semibold tracking-tight">Townloc</span>
       </a>
       <ul class="hidden items-center gap-8 text-sm md:flex">
         <li class="nav-drop relative">
@@ -112,7 +112,7 @@
   <footer class="site-footer bg-ink px-5 py-14 text-paper lg:px-8">
     <div class="mx-auto max-w-7xl">
       <div class="footer-bottom">
-        <p>© <span id="year"></span> GglMap</p>
+        <p>© <span id="year"></span> Townloc</p>
         <a href="../index.html#contact" class="footer-cta">Get a Free Assessment</a>
       </div>
     </div>
@@ -134,7 +134,7 @@
         .then(function (res) {
           if (!res.ok || !res.d.post) throw new Error((res.d && res.d.message) || "Not found");
           var p = res.d.post;
-          document.title = p.title + " | GglMap Blog";
+          document.title = p.title + " | Townloc Blog";
           document.getElementById("post-title").textContent = p.title;
           document.getElementById("post-date").textContent = p.updated_at || "";
           document.getElementById("post-body").innerHTML = p.body || "";
