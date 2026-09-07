@@ -78,7 +78,7 @@ html.js .reveal.reveal-pending.in {
 #site-header {
   background: rgba(17, 17, 17, 0.96);
   border-color: rgba(255, 255, 255, 0.1);
-  color: #f5f1e8;
+  color: #ffffff;
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
@@ -106,10 +106,24 @@ html.js .reveal.reveal-pending.in {
   background: #f5f1e8;
   color: #111111;
 }
-#site-header .nav-drop-item:hover,
-#site-header .nav-drop-item:focus-visible {
-  background: rgba(17, 17, 17, 0.06);
+#site-header .nav-drop-menu .nav-drop-item:hover,
+#site-header .nav-drop-menu .nav-drop-item:focus-visible {
+  background: rgba(17, 17, 17, 0.055);
   color: #111111;
+}
+#site-header .nav-drop-menu .nav-drop-item:hover .nav-drop-num,
+#site-header .nav-drop-menu .nav-drop-item:focus-visible .nav-drop-num {
+  color: rgba(17, 17, 17, 0.55);
+}
+#site-header .nav-drop-menu .nav-drop-item:hover .nav-drop-name,
+#site-header .nav-drop-menu .nav-drop-item:focus-visible .nav-drop-name {
+  transform: translateX(2px);
+}
+#site-header .nav-drop-menu .nav-drop-item:hover .nav-drop-arrow,
+#site-header .nav-drop-menu .nav-drop-item:focus-visible .nav-drop-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: rgba(17, 17, 17, 0.55);
 }
 #site-header #mobile-menu {
   background: rgba(14, 14, 14, 0.985);
@@ -162,9 +176,14 @@ details summary span:last-child { display: inline-block; transition: transform 0
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateX(-50%) translateY(12px) scale(0.97);
+  transform: translateX(-50%) translateY(8px);
   transform-origin: top center;
-  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0.26s linear;
+  /* short grace on close only — smooth hide, not sticky */
+  transition-delay: 0.06s, 0.06s, 0.06s;
 }
 .nav-drop.is-open .nav-drop-menu,
 .nav-drop:hover .nav-drop-menu,
@@ -172,30 +191,32 @@ details summary span:last-child { display: inline-block; transition: transform 0
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0);
+  transition-delay: 0s, 0s, 0s;
 }
 .nav-drop-panel {
   position: relative;
-  border: 1px solid rgba(17, 17, 17, 0.1);
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 24px 60px -28px rgba(17, 17, 17, 0.45);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  padding: 0.45rem;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: #ffffff;
+  box-shadow:
+    0 12px 28px -18px rgba(17, 17, 17, 0.2),
+    0 32px 64px -32px rgba(17, 17, 17, 0.32);
 }
 .nav-drop-item {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 0.9rem;
-  border-radius: 1rem;
+  gap: 0.7rem;
+  padding: 0.68rem 0.8rem;
+  border-radius: 0.8rem;
   color: #111111;
   text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .nav-drop-item:hover,
 .nav-drop-item:focus-visible {
-  background: #111111;
-  color: #f4f1ea;
+  background: rgba(17, 17, 17, 0.055);
+  color: #111111;
   outline: none;
 }
 .nav-drop-num {
@@ -207,12 +228,14 @@ details summary span:last-child { display: inline-block; transition: transform 0
   font-weight: 500;
   letter-spacing: -0.015em;
   line-height: 1.3;
+  transition: transform 0.15s ease;
 }
 .nav-drop-arrow {
   opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  font-size: 0.95rem;
+  transform: translateX(-5px);
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+  font-size: 0.88rem;
+  color: rgba(17, 17, 17, 0.28);
 }
 .nav-drop-item:hover .nav-drop-arrow,
 .nav-drop-item:focus-visible .nav-drop-arrow {
@@ -391,13 +414,7 @@ html.is-navigating .nav-drop-menu {
   box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.55);
 }
 #mobile-menu .nav-drop-num {
-  display: inline-block;
-  min-width: 1.5rem;
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  color: rgba(17, 17, 17, 0.38);
-  font-variant-numeric: tabular-nums;
+  display: none;
 }
 #mobile-menu .nav-drop-item {
   padding: 0.78rem 0.85rem;
@@ -695,7 +712,10 @@ html.is-navigating .nav-drop-menu {
 }
 
 /* Footer */
-.site-footer { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.site-footer {
+  background: #111111; /* match #site-header */
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
 .footer-top {
   display: grid;
   gap: 2.5rem;
@@ -721,7 +741,7 @@ html.is-navigating .nav-drop-menu {
 .footer-ownership li {
   font-size: 0.875rem;
   line-height: 1.65;
-  color: rgba(245, 241, 232, 0.55);
+  color: #ffffff;
 }
 .footer-logo {
   display: inline-flex;
@@ -729,7 +749,7 @@ html.is-navigating .nav-drop-menu {
   gap: 0.65rem;
   font-size: 1.05rem;
   font-weight: 400;
-  color: #f4f1ea;
+  color: #ffffff;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
 }
 .footer-logo:hover {
@@ -757,13 +777,13 @@ html.is-navigating .nav-drop-menu {
   max-width: 22rem;
   font-size: 0.875rem;
   line-height: 1.65;
-  color: rgba(244, 241, 234, 0.55);
+  color: #ffffff;
 }
 .footer-email {
   display: inline-block;
   margin-top: 1rem;
   font-size: 0.8125rem;
-  color: rgba(244, 241, 234, 0.72);
+  color: #ffffff;
   text-decoration: none;
   background-image: linear-gradient(currentColor, currentColor);
   background-position: 0 100%;
@@ -772,7 +792,7 @@ html.is-navigating .nav-drop-menu {
   transition: color 0.3s cubic-bezier(0.22, 1, 0.36, 1), background-size 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .footer-email:hover {
-  color: #f4f1ea;
+  color: #ffffff;
   background-size: 100% 1px;
 }
 .footer-nav {
@@ -791,7 +811,7 @@ html.is-navigating .nav-drop-menu {
   font-weight: 400;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.42);
+  color: #ffffff;
 }
 .footer-col ul {
   margin: 0.85rem 0 0;
@@ -808,7 +828,7 @@ html.is-navigating .nav-drop-menu {
   max-width: 100%;
   font-size: 0.875rem;
   line-height: 1.4;
-  color: rgba(244, 241, 234, 0.7);
+  color: #ffffff;
   transition:
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
@@ -828,7 +848,7 @@ html.is-navigating .nav-drop-menu {
 }
 .footer-col a:hover,
 .footer-col a[aria-current="page"] {
-  color: #f4f1ea;
+  color: #ffffff;
   transform: translateX(4px);
 }
 .footer-col a:hover::after,
@@ -838,7 +858,7 @@ html.is-navigating .nav-drop-menu {
 }
 .footer-col a:focus-visible {
   outline: none;
-  color: #f4f1ea;
+  color: #ffffff;
 }
 .footer-guarantee {
   margin-top: 2.5rem;
@@ -857,7 +877,7 @@ html.is-navigating .nav-drop-menu {
   font-weight: 400;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.45);
+  color: #ffffff;
 }
 .footer-guarantee-text {
   margin-top: 0.35rem;
@@ -869,7 +889,7 @@ html.is-navigating .nav-drop-menu {
 @media (min-width: 640px) {
   .footer-guarantee-text { font-size: 1.2rem; }
 }
-.footer-guarantee-text span { color: rgba(244, 241, 234, 0.32); }
+.footer-guarantee-text span { color: #ffffff; }
 .footer-bottom {
   margin-top: 2rem;
   padding-top: 1.35rem;
@@ -878,7 +898,7 @@ html.is-navigating .nav-drop-menu {
   flex-direction: column;
   gap: 0.85rem;
   font-size: 0.75rem;
-  color: rgba(244, 241, 234, 0.38);
+  color: #ffffff;
 }
 @media (min-width: 640px) {
   .footer-bottom {
@@ -894,7 +914,7 @@ html.is-navigating .nav-drop-menu {
   gap: 0.4rem;
   font-size: 0.8125rem;
   font-weight: 400;
-  color: rgba(244, 241, 234, 0.72);
+  color: #ffffff;
   transition:
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
@@ -909,7 +929,7 @@ html.is-navigating .nav-drop-menu {
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .footer-cta:hover {
-  color: #f4f1ea;
+  color: #ffffff;
   transform: translateX(3px);
 }
 .footer-cta:hover::after {
@@ -918,7 +938,7 @@ html.is-navigating .nav-drop-menu {
 }
 .footer-cta:focus-visible {
   outline: none;
-  color: #f4f1ea;
+  color: #ffffff;
 }
 
 .legal-prose h2 {
@@ -1135,7 +1155,11 @@ main > section:first-of-type p.text-\[11px\],
 #contact .field-input,
 #contact input,
 #contact select,
-#contact textarea {
+#contact textarea,
+#contract-form .field-input,
+#contract-form input,
+#contract-form select,
+#contract-form textarea {
   font-family: Outfit, system-ui, sans-serif !important;
   font-size: 0.875rem !important;
   font-weight: 400 !important;
@@ -1144,14 +1168,26 @@ main > section:first-of-type p.text-\[11px\],
 
 #contact .field-input::placeholder,
 #contact input::placeholder,
-#contact textarea::placeholder {
+#contact textarea::placeholder,
+#contact .field-input::-webkit-input-placeholder,
+#contact input::-webkit-input-placeholder,
+#contact textarea::-webkit-input-placeholder,
+#contract-form .field-input::placeholder,
+#contract-form input::placeholder,
+#contract-form textarea::placeholder,
+#contract-form .field-input::-webkit-input-placeholder,
+#contract-form input::-webkit-input-placeholder,
+#contract-form textarea::-webkit-input-placeholder {
   font-weight: 400 !important;
   opacity: 0.55;
 }
 
-#contact label > span.font-medium {
+#contact label > span.font-medium,
+#contract-form label > span.font-medium,
+#contact label > span,
+#contract-form label > span {
   font-size: 0.8125rem !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
 }
 
 /* Non-hero section main headlines — unified 2.5rem (all pages) */
@@ -1234,11 +1270,13 @@ main section h2.svc-section-title {
   font-weight: 500 !important;
 }
 
-/* Uppercase labels: clear, not heavy */
+/* Uppercase labels: same regular site font, stay uppercase */
 .text-xs.uppercase,
 .text-xs.font-medium.uppercase {
-  font-weight: 500 !important;
-  letter-spacing: 0.2em;
+  font-family: Outfit, "Outfit Fallback", system-ui, sans-serif !important;
+  font-weight: 400 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em !important;
 }
 
 /* Stronger muted / secondary text for contrast */
@@ -1340,13 +1378,13 @@ main section h2.svc-section-title {
    Navbar + footer visibility (dark chrome)
    ========================================================= */
 #site-header {
-  color: #f7f4ee;
+  color: #ffffff;
 }
 
 #site-header .nav-link,
 #site-header .nav-drop-btn {
   opacity: 1 !important;
-  color: #f7f4ee !important;
+  color: #ffffff !important;
   font-weight: 400 !important;
   font-size: 0.975rem !important;
 }
@@ -1354,13 +1392,13 @@ main section h2.svc-section-title {
 #site-header a.flex > span:last-child,
 #site-header nav > a span.text-\[15px\],
 #site-header .text-\[15px\] {
-  color: #f7f4ee !important;
+  color: #ffffff !important;
   font-weight: 400 !important;
   opacity: 1 !important;
 }
 
 #site-header #menu-btn {
-  color: #f7f4ee;
+  color: #ffffff;
   border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
@@ -1368,7 +1406,7 @@ main section h2.svc-section-title {
 #site-header #mobile-menu .mobile-services-btn,
 #site-header #mobile-menu .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
 #site-header #mobile-menu a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
-  color: #f7f4ee !important;
+  color: #ffffff !important;
   opacity: 1 !important;
 }
 
@@ -1384,14 +1422,14 @@ main section h2.svc-section-title {
   color: inherit;
 }
 
-/* Footer: stronger contrast on dark */
+/* Footer: pure white text on dark */
 .footer-logo {
-  color: #f7f4ee !important;
+  color: #ffffff !important;
   font-weight: 400 !important;
 }
 
 .footer-mark {
-  color: #f7f4ee !important;
+  color: #ffffff !important;
   background: rgba(255, 255, 255, 0.16) !important;
   font-weight: 400 !important;
 }
@@ -1400,13 +1438,13 @@ main section h2.svc-section-title {
 .footer-guarantee-label {
   font-size: 0.75rem !important;
   letter-spacing: 0.14em;
-  color: rgba(247, 244, 238, 0.78) !important;
+  color: #ffffff !important;
 }
 
 .footer-col a {
   font-size: 0.9375rem !important;
   line-height: 1.45 !important;
-  color: rgba(247, 244, 238, 0.92) !important;
+  color: #ffffff !important;
 }
 
 .footer-col a:hover,
@@ -1419,13 +1457,13 @@ main section h2.svc-section-title {
 .footer-ownership li {
   font-size: 0.9375rem !important;
   line-height: 1.65 !important;
-  color: rgba(247, 244, 238, 0.82) !important;
+  color: #ffffff !important;
 }
 
 .footer-email,
 .footer-cta {
   font-size: 0.875rem !important;
-  color: rgba(247, 244, 238, 0.92) !important;
+  color: #ffffff !important;
 }
 
 .footer-email:hover,
@@ -1442,20 +1480,21 @@ main section h2.svc-section-title {
 }
 
 .footer-guarantee-text {
-  color: #f7f4ee !important;
+  color: #ffffff !important;
 }
 
 .footer-guarantee-text span {
-  color: rgba(247, 244, 238, 0.62) !important;
+  color: #ffffff !important;
 }
 
 .footer-bottom {
   font-size: 0.8125rem !important;
-  color: rgba(247, 244, 238, 0.72) !important;
+  color: #ffffff !important;
 }
 
 .site-footer,
 .site-footer a {
+  color: #ffffff;
   -webkit-font-smoothing: antialiased;
 }
 

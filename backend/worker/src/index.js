@@ -19,6 +19,8 @@ const ALLOWED_SERVICES = new Set([
   "Google Reviews & Reputation Management",
   "Google Ads",
   "Website Design & Development",
+  "Local SEO",
+  "Remove Negative Reviews",
   "Not sure",
 ]);
 
@@ -32,6 +34,8 @@ const PAGE_ALLOWLIST = [
   "services/google-maps-review-management.html",
   "services/google-ads-campaigns.html",
   "services/web-development.html",
+  "services/local-seo.html",
+  "services/remove-negative-reviews.html",
 ];
 
 const PAGE_ALLOWLIST_SET = new Set(PAGE_ALLOWLIST);

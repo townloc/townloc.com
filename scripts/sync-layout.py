@@ -10,6 +10,8 @@ SERVICES = {
     "reviews": "google-maps-review-management.html",
     "ads": "google-ads-campaigns.html",
     "web": "web-development.html",
+    "local-seo": "local-seo.html",
+    "neg-reviews": "remove-negative-reviews.html",
 }
 
 
@@ -49,6 +51,12 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
                   class="nav-drop-arrow">→</span></a>
               <a class="nav-drop-item" href="{services_prefix}web-development.html"{ac(current, "web")}><span class="nav-drop-num">04</span><span
                   class="nav-drop-name">Website Building</span><span class="nav-drop-arrow">→</span></a>
+              <a class="nav-drop-item" href="{services_prefix}local-seo.html"{ac(current, "local-seo")}><span
+                  class="nav-drop-num">05</span><span class="nav-drop-name">Local SEO</span><span
+                  class="nav-drop-arrow">→</span></a>
+              <a class="nav-drop-item" href="{services_prefix}remove-negative-reviews.html"{ac(current, "neg-reviews")}><span
+                  class="nav-drop-num">06</span><span class="nav-drop-name">Remove Negative Reviews</span><span
+                  class="nav-drop-arrow">→</span></a>
             </div>
           </div>
         </li>
@@ -98,6 +106,10 @@ def render_header(prefix: str, services_prefix: str, industries_prefix: str, hom
                       class="nav-drop-num">03</span><span class="nav-drop-name">Google Ads</span></a>
                   <a class="nav-drop-item mobile-link" href="{services_prefix}web-development.html"{ac(current, "web")}><span
                       class="nav-drop-num">04</span><span class="nav-drop-name">Website Building</span></a>
+                  <a class="nav-drop-item mobile-link" href="{services_prefix}local-seo.html"{ac(current, "local-seo")}><span
+                      class="nav-drop-num">05</span><span class="nav-drop-name">Local SEO</span></a>
+                  <a class="nav-drop-item mobile-link" href="{services_prefix}remove-negative-reviews.html"{ac(current, "neg-reviews")}><span
+                      class="nav-drop-num">06</span><span class="nav-drop-name">Remove Negative Reviews</span></a>
                 </div>
               </div>
             </div>
@@ -129,9 +141,11 @@ def render_footer(services_prefix: str, hash_base: str, contact_href=None):
           <p class="footer-col-title">Services</p>
           <ul>
             <li><a href="{services_prefix}google-maps-review-management.html">Reputation Management</a></li>
-            <li><a href="{services_prefix}google-business-profile-setup.html">Local SEO</a></li>
+            <li><a href="{services_prefix}google-business-profile-setup.html">Google Business Profile</a></li>
             <li><a href="{services_prefix}google-ads-campaigns.html">Paid Advertising</a></li>
             <li><a href="{services_prefix}web-development.html">Web Design &amp; Development</a></li>
+            <li><a href="{services_prefix}local-seo.html">Local SEO</a></li>
+            <li><a href="{services_prefix}remove-negative-reviews.html">Remove Negative Reviews</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -233,6 +247,8 @@ def main():
         ("services/google-maps-review-management.html", "../", "", "../industries/", "../index.html", "../index.html", "reviews", "#contact"),
         ("services/google-ads-campaigns.html", "../", "", "../industries/", "../index.html", "../index.html", "ads", "#contact"),
         ("services/web-development.html", "../", "", "../industries/", "../index.html", "../index.html", "web", "#contact"),
+        ("services/local-seo.html", "../", "", "../industries/", "../index.html", "../index.html", "local-seo", "#contact"),
+        ("services/remove-negative-reviews.html", "../", "", "../industries/", "../index.html", "../index.html", "neg-reviews", "#contact"),
     ]
 
     for rel, prefix, services_prefix, industries_prefix, home, hash_base, current, contact_href in configs:
