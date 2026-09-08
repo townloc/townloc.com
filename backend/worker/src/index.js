@@ -259,16 +259,49 @@ function customMenusFromDoc(doc) {
 
 async function loadMenusWithSeed(env) {
   const current = await readCmsDocument(env);
-  const raw = customMenusFromDoc(current);
-  if (current.siteMenusSeeded) {
-    return { menus: raw, changed: false };
+  let raw = customMenusFromDoc(current);
+  let changed = false;
+
+  if (!current.siteMenusSeeded) {
+    const seeded = ensureSeededCustomMenus(raw);
+    raw = normalizeCustomMenusDoc(seeded.menus);
+    changed = seeded.changed || true;
   }
-  const { menus, changed } = ensureSeededCustomMenus(raw);
-  const normalized = normalizeCustomMenusDoc(menus);
-  const merged = persistCustomMenus(current, normalized);
-  merged.siteMenusSeeded = true;
-  await writeCmsDocument(env, merged);
-  return { menus: normalized, changed };
+
+  // Industries nav → homepage #industries (same pattern as Work / Trust / FAQ)
+  const menus = Array.isArray(raw.menus) ? raw.menus : [];
+  menus.forEach(function (menu) {
+    (menu.items || []).forEach(function (it) {
+      if (!it) return;
+      const href = String(it.href || "").trim();
+      const isIndustriesItem =
+        it.id === "m_industries" ||
+        /^industries$/i.test(String(it.label || "").trim());
+      if (
+        isIndustriesItem &&
+        (/^\/?industries\/?$/i.test(href) ||
+          /^\/?industries\/index\.html$/i.test(href) ||
+          /^\/industries\/?$/i.test(href.replace(/\.html$/i, "")))
+      ) {
+        it.href = "/#industries";
+        it.type = "custom";
+        changed = true;
+      }
+    });
+  });
+
+  if (changed) {
+    const normalized = normalizeCustomMenusDoc({
+      menus: menus,
+      locations: raw.locations,
+    });
+    const merged = persistCustomMenus(current, normalized);
+    merged.siteMenusSeeded = true;
+    await writeCmsDocument(env, merged);
+    return { menus: normalized, changed: true };
+  }
+
+  return { menus: raw, changed: false };
 }
 
 function newMenuId() {
@@ -299,6 +332,7 @@ function isEditablePage(path, doc) {
 }
 
 async function writeCmsDocument(env, data) {
+  invalidateCmsDocCache();
   await ensureSiteCms(env);
   await env.DB.prepare(
     `INSERT INTO site_cms (id, data, updated_at) VALUES (1, ?, datetime('now'))
@@ -1968,7 +2002,26 @@ async function handleAdminPagePublish(request, env, origin) {
 
 /* ── Site CMS (branding / header / footer / page text + image URLs) ── */
 
+let cmsSchemaReady = false;
+let cmsDocCache = { at: 0, doc: null };
+const CMS_DOC_CACHE_MS = 10_000;
+
+function invalidateCmsDocCache() {
+  cmsDocCache = { at: 0, doc: null };
+}
+
+function customPagesNeedRootMigrate(doc) {
+  return customPagesFromDoc(doc).some((p) => {
+    const path = p && p.path ? String(p.path) : "";
+    return (
+      /^services\/[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i.test(path) &&
+      !PAGE_ALLOWLIST_SET.has(path)
+    );
+  });
+}
+
 async function ensureSiteCms(env) {
+  if (cmsSchemaReady) return;
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS site_cms (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -1979,9 +2032,52 @@ async function ensureSiteCms(env) {
   await env.DB.prepare(
     `INSERT OR IGNORE INTO site_cms (id, data) VALUES (1, '{}')`
   ).run();
+  cmsSchemaReady = true;
+}
+
+function fixIndustriesNavToHomeSection(doc) {
+  const menusDoc = customMenusFromDoc(doc);
+  const menus = Array.isArray(menusDoc.menus) ? menusDoc.menus : [];
+  let changed = false;
+  menus.forEach(function (menu) {
+    (menu.items || []).forEach(function (it) {
+      if (!it) return;
+      const href = String(it.href || "").trim();
+      const isIndustriesItem =
+        it.id === "m_industries" ||
+        /^industries$/i.test(String(it.label || "").trim());
+      if (!isIndustriesItem) return;
+      if (
+        /^\/?#industries$/i.test(href) ||
+        /^\/#industries$/i.test(href)
+      ) {
+        return;
+      }
+      if (
+        /^\/?industries\/?$/i.test(href) ||
+        /^\/?industries\/index(?:\.html)?$/i.test(href) ||
+        /^https?:\/\/townloc\.com\/industries\/?$/i.test(href)
+      ) {
+        it.href = "/#industries";
+        it.type = "custom";
+        changed = true;
+      }
+    });
+  });
+  if (!changed) return { doc, changed: false };
+  const normalized = normalizeCustomMenusDoc({
+    menus: menus,
+    locations: menusDoc.locations,
+  });
+  const merged = persistCustomMenus(doc, normalized);
+  return { doc: merged, changed: true };
 }
 
 async function readCmsDocument(env) {
+  const now = Date.now();
+  if (cmsDocCache.doc && now - cmsDocCache.at < CMS_DOC_CACHE_MS) {
+    return cmsDocCache.doc;
+  }
   await ensureSiteCms(env);
   const row = await env.DB.prepare(`SELECT data FROM site_cms WHERE id = 1`).first();
   let stored = {};
@@ -1990,13 +2086,25 @@ async function readCmsDocument(env) {
   } catch {
     stored = {};
   }
-  const merged = deepMerge(CMS_DEFAULTS, stored);
+  let merged = deepMerge(CMS_DEFAULTS, stored);
   try {
-    return await migrateCustomPagesToRoot(env, merged);
+    if (customPagesNeedRootMigrate(merged)) {
+      merged = await migrateCustomPagesToRoot(env, merged);
+    }
   } catch (err) {
     console.error("custom page root migrate failed", err);
-    return merged;
   }
+  try {
+    const fixed = fixIndustriesNavToHomeSection(merged);
+    if (fixed.changed) {
+      merged = fixed.doc;
+      await writeCmsDocument(env, merged);
+    }
+  } catch (err) {
+    console.error("industries nav fix failed", err);
+  }
+  cmsDocCache = { at: Date.now(), doc: merged };
+  return merged;
 }
 
 async function handlePublicCms(env, origin) {
@@ -2572,13 +2680,6 @@ async function serveAssetWithCms(request, env) {
   });
 
   if (looksHtml && env.DB) {
-    try {
-      // Moves legacy custom pages services/{slug}.html → {slug}.html
-      await readCmsDocument(env);
-    } catch (err) {
-      console.error("CMS migrate on serve failed", err);
-    }
-
     // Old custom URLs under /services/{slug} → /{slug}
     const legacySvc =
       url.pathname.match(/^\/services\/([a-z0-9]+(?:-[a-z0-9]+)*)\.html$/i) ||
@@ -2678,7 +2779,11 @@ async function serveAssetWithCms(request, env) {
     "$1"
   );
 
-  baseHeaders.set("cache-control", "no-store");
+  // Short edge cache; CMS saves clear worker memory cache. UI unchanged.
+  baseHeaders.set(
+    "cache-control",
+    "public, max-age=0, s-maxage=30, stale-while-revalidate=120"
+  );
   baseHeaders.set("content-type", "text/html; charset=utf-8");
   return new Response(html, { status, headers: baseHeaders });
 }

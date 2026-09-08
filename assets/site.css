@@ -589,6 +589,64 @@ html.is-navigating .nav-drop-menu {
   grid-template-columns: 1fr;
   gap: 1.2rem;
 }
+
+/* Homepage + /services/ service cards (shared — keep sizes/hover in sync) */
+.svc-card {
+  position: relative;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+}
+
+.svc-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto;
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(17, 17, 17, 0.28), transparent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.svc-card:hover::after {
+  opacity: 1;
+}
+
+.svc-card > .overflow-hidden {
+  position: relative;
+  aspect-ratio: 5 / 2;
+}
+
+.svc-card img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 0.5s ease;
+}
+
+.svc-card:hover img {
+  transform: translate3d(0, 0, 0) scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svc-card::after,
+  .svc-card img {
+    transition: none;
+  }
+  .svc-card:hover img {
+    transform: none;
+  }
+}
+
 .cat-card {
   position: relative;
   overflow: hidden;
@@ -1683,7 +1741,7 @@ main section h2.svc-section-title {
 @keyframes hero-fade-up {
   from {
     opacity: 0;
-    transform: translate3d(0, 16px, 0);
+    transform: translate3d(0, 10px, 0);
   }
   to {
     opacity: 1;
@@ -1692,38 +1750,40 @@ main section h2.svc-section-title {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Homepage full-bleed hero */
+  /* Homepage full-bleed hero — image first, then copy (same fade-up) */
+  html.js .hero-banner .hero-banner-img,
   html.js .hero-banner .hero-eyebrow,
   html.js .hero-banner .hero-title,
   html.js .hero-banner .hero-lead,
   html.js .hero-banner .hero-actions {
-    animation: hero-fade-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  /* Image fades in only after decode — avoids pop/jank while bytes still loading */
-  html.js .hero-banner .hero-banner-img {
     opacity: 0;
-    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
-    animation: none;
   }
 
   html.js .hero-banner.is-media-ready .hero-banner-img {
-    opacity: 1;
+    animation: hero-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0s;
   }
 
-  html.js .hero-banner .hero-eyebrow {
-    animation-delay: 0.1s;
+  html.js .hero-banner.is-media-ready .hero-eyebrow,
+  html.js .hero-banner.is-media-ready .hero-title,
+  html.js .hero-banner.is-media-ready .hero-lead,
+  html.js .hero-banner.is-media-ready .hero-actions {
+    animation: hero-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  html.js .hero-banner .hero-title {
+  html.js .hero-banner.is-media-ready .hero-eyebrow {
     animation-delay: 0.18s;
   }
 
-  html.js .hero-banner .hero-lead {
-    animation-delay: 0.3s;
+  html.js .hero-banner.is-media-ready .hero-title {
+    animation-delay: 0.26s;
   }
 
-  html.js .hero-banner .hero-actions {
+  html.js .hero-banner.is-media-ready .hero-lead {
+    animation-delay: 0.34s;
+  }
+
+  html.js .hero-banner.is-media-ready .hero-actions {
     animation-delay: 0.42s;
   }
 
@@ -1737,6 +1797,12 @@ main section h2.svc-section-title {
   html.js main > section:first-of-type:not(.hero-banner) > .mx-auto > .grid > div > nav + p,
   html.js main > section:first-of-type:not(.hero-banner) figure {
     animation: hero-fade-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Service cards use shared reveal stagger — don't apply hero figure fade to them */
+  html.js main > section:first-of-type:not(.hero-banner) .svc-card figure,
+  html.js main > section:first-of-type:not(.hero-banner) .svc-card img {
+    animation: none !important;
   }
 
   html.js main > section:first-of-type:not(.hero-banner) > .mx-auto > nav + p,

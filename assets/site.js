@@ -4,7 +4,7 @@
   document.documentElement.classList.add("js");
   document.documentElement.classList.add("is-ready");
 
-  /* Smooth hero media: fade image only after it's decoded (no design/content change). */
+  /* Smooth hero media: image fade-up first, then copy (same motion). */
   (function readyHeroBanner() {
     var banner = document.querySelector(".hero-banner");
     var img = banner && banner.querySelector(".hero-banner-img");
@@ -15,14 +15,20 @@
       done = true;
       banner.classList.add("is-media-ready");
     }
+    function afterDecode() {
+      if (typeof img.decode === "function") {
+        img.decode().then(mark).catch(mark);
+      } else {
+        mark();
+      }
+    }
     if (img.complete && img.naturalWidth > 0) {
-      mark();
+      afterDecode();
       return;
     }
-    img.addEventListener("load", mark, { once: true });
+    img.addEventListener("load", afterDecode, { once: true });
     img.addEventListener("error", mark, { once: true });
-    // Fallback if load event was missed
-    window.setTimeout(mark, 2500);
+    window.setTimeout(mark, 2800);
   })();
 
   var siteHeader = document.getElementById("site-header");
@@ -489,7 +495,35 @@
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
 
     var vh = window.innerHeight || document.documentElement.clientHeight;
+
+    /* Service cards: one shared stagger when their grid enters view
+       (avoids top row popping in while lower row scroll-animates). */
+    var svcParents = [];
+    document.querySelectorAll(".svc-card.reveal").forEach(function (card) {
+      var parent = card.parentElement;
+      if (parent && svcParents.indexOf(parent) === -1) svcParents.push(parent);
+    });
+    svcParents.forEach(function (parent) {
+      var cards = parent.querySelectorAll(".svc-card.reveal");
+      cards.forEach(function (c) {
+        c.classList.add("reveal-pending");
+      });
+      var gridIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          cards.forEach(function (c, i) {
+            window.setTimeout(function () {
+              c.classList.add("in");
+            }, Math.min(i * 70, 350));
+          });
+          gridIo.unobserve(entry.target);
+        });
+      }, { rootMargin: "0px 0px -6% 0px", threshold: 0.06 });
+      gridIo.observe(parent);
+    });
+
     reveals.forEach(function (el) {
+      if (el.classList.contains("svc-card")) return;
       var rect = el.getBoundingClientRect();
       // Already on-screen: show immediately (no pending hide → no refresh blink)
       if (rect.top < vh * 0.92 && rect.bottom > 0) {

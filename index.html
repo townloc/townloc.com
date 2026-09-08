@@ -31,6 +31,8 @@
   <link rel="apple-touch-icon" href="/assets/images/townloc-favicon.png?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
   <link rel="preload" as="image" href="/assets/images/home/hero-banner.jpg" fetchpriority="high" />
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="https://fonts.gstatic.com/s/outfit/v15/QGYvz_MVcBeNP4NJtEtq.woff2" />
@@ -45,14 +47,24 @@
       var banner = document.querySelector(".hero-banner");
       var img = banner && banner.querySelector(".hero-banner-img");
       if (!banner || !img) return;
+      var done = false;
       function markHero() {
+        if (done) return;
+        done = true;
         banner.classList.add("is-media-ready");
       }
-      if (img.complete && img.naturalWidth > 0) markHero();
+      function afterDecode() {
+        if (typeof img.decode === "function") {
+          img.decode().then(markHero).catch(markHero);
+        } else {
+          markHero();
+        }
+      }
+      if (img.complete && img.naturalWidth > 0) afterDecode();
       else {
-        img.addEventListener("load", markHero, { once: true });
+        img.addEventListener("load", afterDecode, { once: true });
         img.addEventListener("error", markHero, { once: true });
-        window.setTimeout(markHero, 2500);
+        window.setTimeout(markHero, 2800);
       }
     });
     window.setTimeout(function () {
@@ -2582,7 +2594,7 @@
     @keyframes hero-fade-up {
       from {
         opacity: 0;
-        transform: translate3d(0, 16px, 0);
+        transform: translate3d(0, 10px, 0);
       }
       to {
         opacity: 1;
@@ -2591,59 +2603,64 @@
     }
 
     @media (prefers-reduced-motion: no-preference) {
+      html.js .hero-banner .hero-banner-img,
       html.js .hero-banner .hero-eyebrow,
       html.js .hero-banner .hero-title,
       html.js .hero-banner .hero-lead,
       html.js .hero-banner .hero-actions,
       html.js #trust-strip.hero-trust-strip > .mx-auto > p,
       html.js #trust-strip.hero-trust-strip .trust-badge {
-        animation: hero-fade-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
-      }
-
-      html.js .hero-banner .hero-banner-img {
         opacity: 0;
-        transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
-        animation: none;
       }
 
       html.js .hero-banner.is-media-ready .hero-banner-img {
-        opacity: 1;
+        animation: hero-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: 0s;
       }
 
-      html.js .hero-banner .hero-eyebrow {
-        animation-delay: 0.1s;
+      html.js .hero-banner.is-media-ready .hero-eyebrow,
+      html.js .hero-banner.is-media-ready .hero-title,
+      html.js .hero-banner.is-media-ready .hero-lead,
+      html.js .hero-banner.is-media-ready .hero-actions,
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip > .mx-auto > p,
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip .trust-badge {
+        animation: hero-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
-      html.js .hero-banner .hero-title {
+      html.js .hero-banner.is-media-ready .hero-eyebrow {
         animation-delay: 0.18s;
       }
 
-      html.js .hero-banner .hero-lead {
-        animation-delay: 0.3s;
+      html.js .hero-banner.is-media-ready .hero-title {
+        animation-delay: 0.26s;
       }
 
-      html.js .hero-banner .hero-actions {
+      html.js .hero-banner.is-media-ready .hero-lead {
+        animation-delay: 0.34s;
+      }
+
+      html.js .hero-banner.is-media-ready .hero-actions {
         animation-delay: 0.42s;
       }
 
-      html.js #trust-strip.hero-trust-strip > .mx-auto > p {
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip > .mx-auto > p {
         animation-delay: 0.5s;
       }
 
-      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(1) {
-        animation-delay: 0.56s;
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip .trust-badge:nth-child(1) {
+        animation-delay: 0.54s;
       }
 
-      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(2) {
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip .trust-badge:nth-child(2) {
+        animation-delay: 0.58s;
+      }
+
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip .trust-badge:nth-child(3) {
         animation-delay: 0.62s;
       }
 
-      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(3) {
-        animation-delay: 0.68s;
-      }
-
-      html.js #trust-strip.hero-trust-strip .trust-badge:nth-child(4) {
-        animation-delay: 0.74s;
+      html.js .hero-banner.is-media-ready ~ #trust-strip.hero-trust-strip .trust-badge:nth-child(4) {
+        animation-delay: 0.66s;
       }
     }
 
@@ -2730,7 +2747,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="assets/site.css?v=23" />
+  <link rel="stylesheet" href="assets/site.css?v=27" />
 </head>
 
 <body class="bg-paper text-ink antialiased">
@@ -3727,8 +3744,8 @@
     </form>
   </dialog>
 
-  <script src="assets/site.js?v=11"></script>
-  <script src="assets/cms.js"></script>
+  <script src="assets/site.js?v=13" defer></script>
+  <script src="assets/cms.js" defer></script>
 </body>
 
 </html>

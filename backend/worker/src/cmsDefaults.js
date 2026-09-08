@@ -27,7 +27,7 @@ export const CMS_DEFAULTS = {
           { id: "m_svc_web", label: "Website Building", href: "/services/web-development", parentId: "m_services", order: 4, type: "page" },
           { id: "m_svc_seo", label: "Local SEO", href: "/services/local-seo", parentId: "m_services", order: 5, type: "page" },
           { id: "m_svc_neg", label: "Remove Negative Reviews", href: "/services/remove-negative-reviews", parentId: "m_services", order: 6, type: "page" },
-          { id: "m_industries", label: "Industries", href: "/industries/", parentId: null, order: 7, type: "page" },
+          { id: "m_industries", label: "Industries", href: "/#industries", parentId: null, order: 7, type: "custom" },
           { id: "m_work", label: "Work", href: "/#work", parentId: null, order: 8, type: "custom" },
           { id: "m_trust", label: "Trust", href: "/#trust", parentId: null, order: 9, type: "custom" },
           { id: "m_faq", label: "FAQ", href: "/#faq", parentId: null, order: 10, type: "custom" },

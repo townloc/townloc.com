@@ -28,7 +28,6 @@
   <link rel="apple-touch-icon" href="/assets/images/townloc-favicon.png?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://images.unsplash.com" />
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="https://fonts.gstatic.com/s/outfit/v15/QGYvz_MVcBeNP4NJtEtq.woff2" />
   <link
@@ -45,7 +44,7 @@
       document.documentElement.classList.add("is-ready");
     }, 80);
   </script>
-  <link rel="stylesheet" href="../assets/site.css?v=22" />
+  <link rel="stylesheet" href="../assets/site.css?v=27" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -182,227 +181,130 @@
   </header>
 
   <main id="main" class="pt-[4.5rem] lg:pt-0">
-    <section class="px-5 pb-12 pt-8 lg:px-8 lg:pt-24">
+    <div class="border-b border-ink/10 bg-white px-5 py-4 lg:px-8">
       <div class="mx-auto max-w-7xl">
-        <nav class="reveal text-xs text-ink/45" aria-label="Breadcrumb">
+        <nav class="text-xs text-ink/45" aria-label="Breadcrumb">
           <ol class="flex flex-wrap items-center gap-2">
             <li><a class="hover:text-ink" href="../index.html">Home</a></li>
             <li aria-hidden="true">/</li>
             <li class="text-ink/70">Services</li>
           </ol>
         </nav>
-        <div class="mt-8 grid gap-10 lg:grid-cols-2 lg:items-stretch lg:gap-12 xl:gap-16">
-          <div class="flex flex-col justify-center">
-            <p
-              class="reveal inline-flex rounded-full border border-line bg-white/70 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-ink/55">
-              Service category</p>
-            <h1 data-cms="page.title" class="reveal mt-5 font-serif text-4xl leading-[1.08] tracking-tight sm:text-5xl xl:text-[3.4rem]">Four pages. Four
-              problems. No filler catalog.</h1>
-            <p class="reveal mt-6 text-base leading-relaxed text-ink/65 sm:text-lg">Local businesses usually do
-              not need a dozen products. They need a claimed Google Business Profile, reviews on a silent listing, ads that
-              stop wasting money, or a website that finally exists. Open the service that matches the gap. Each page stands
-              on its own.</p>
-            <p class="reveal rail-hint mt-6 lg:mt-8">Swipe for all four</p>
-          </div>
-          <figure
-            class="reveal relative min-h-[16rem] overflow-hidden rounded-[1.75rem] border border-line bg-ink shadow-lift sm:min-h-[18rem] lg:min-h-0 lg:h-full">
-            <img data-cms-src="page.hero_image" src="https://images.unsplash.com/photo-1524661132060-ba3cfcb38cc5?auto=format&amp;fit=crop&amp;w=1600&amp;q=75"
-              alt="Folded paper map with a red location pin marking a local place"
-              class="absolute inset-0 h-full w-full object-cover" width="1600" height="900" fetchpriority="high"
-              loading="eager" decoding="async" />
-            <figcaption
-              class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/95 via-ink/55 to-transparent p-5 text-sm text-paper sm:p-7 sm:text-base">
-              Reviews, listings, ads, websites, Local SEO, and reputation support — clear services, no filler catalog.
-            </figcaption>
-          </figure>
-        </div>
       </div>
-    </section>
+    </div>
 
-    <section class="border-t border-line px-5 py-16 lg:px-8 lg:py-24">
+    <!-- Same services section as homepage (design/content unchanged) -->
+    <section id="services" class="bg-paper px-5 py-14 lg:px-8 lg:py-20">
       <div class="mx-auto max-w-7xl">
-        <div class="cat-rail">
-          <article class="cat-card reveal">
-            <figure class="overflow-hidden">
-              <img
-                src="../assets/images/shared/service-google-business-reviews.webp?v=8"
-                srcset="../assets/images/shared/service-google-business-reviews.webp?v=8 1600w"
-                sizes="(min-width: 768px) 40vw, 100vw"
-                alt="Illustrated Google Reviews service banner with star rating graphics"
-                class="w-full object-cover object-center" width="1600" height="639" loading="lazy" decoding="async" />
-            </figure>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="text-xs text-ink/40">01 · Google Reviews</p>
-                <h2 class="mt-3 font-serif text-2xl sm:text-3xl">Google Reviews</h2>
-                <p class="mt-4 text-sm leading-relaxed text-ink/65">Built for shops that already have a Google Business
-                  Profile and almost nothing under it. We help you gather real reviews from customers who already paid
-                  you — without buying ratings or gaming the map.</p>
-              </div>
-              <a href="google-maps-review-management.html"
-                class="link-arrow mt-8 inline-flex w-fit text-sm font-medium">Read Google Reviews</a>
+        <div class="max-w-2xl">
+          <p class="text-xs font-medium uppercase tracking-[0.22em] text-ink/45" data-cms="page.services_eyebrow">What we do</p>
+          <h1 class="mt-3 font-serif text-4xl tracking-tight sm:text-5xl" data-cms="page.services_title">Six services. One stronger presence on
+            Google.</h1>
+          <p class="mt-4 text-lg leading-relaxed text-ink/60" data-cms="page.services_lead">Google Business Reviews, Google Business Profile, Google
+            Ads, Web Development, Local SEO, and Remove Negative Reviews — built to work together and owned by you.</p>
+        </div>
+        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:gap-7">
+          <a href="google-business-profile-setup.html"
+            class="svc-card reveal group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white shadow-lift transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+            <div class="overflow-hidden">
+              <img data-cms-src="page.svc_card_gbp_image" src="../assets/images/shared/service-google-my-business.webp?v=10"
+                alt="Illustrated Google Business Profile service banner for local listings" class="w-full object-cover object-center"
+                width="1600" height="639" loading="lazy" decoding="async" />
             </div>
-          </article>
-
-          <article class="cat-card reveal">
-            <figure class="overflow-hidden">
-              <img
-                src="../assets/images/shared/service-google-my-business.webp?v=8"
-                alt="Illustrated Google Business Profile service banner for local listings"
-                class="w-full object-cover object-center" width="1600" height="639" loading="lazy" decoding="async" />
-            </figure>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="text-xs text-ink/40">02 · Google Business Profile</p>
-                <h2 class="mt-3 font-serif text-2xl sm:text-3xl">Google Business Profile</h2>
-                <p class="mt-4 text-sm leading-relaxed text-ink/65">New Google Business Profile setup and existing
-                  listing optimization for any business on Google Maps. Claim, categories, hours, photos, posts.
-                  Separate from collecting reviews. You keep the login.</p>
-              </div>
-              <a href="google-business-profile-setup.html"
-                class="link-arrow mt-8 inline-flex w-fit text-sm font-medium">Read the setup page</a>
+            <div class="flex flex-1 flex-col p-7">
+              <p class="text-xs tracking-[0.18em] text-ink/40" data-cms="page.svc1_label">01 · Google Business Profile</p>
+              <h3 class="mt-3 font-serif text-2xl leading-snug" data-cms="page.svc1_title">Get Your Google Business Profile Working for You</h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-ink/65" data-cms="page.svc1_lead">We set up, fix, and optimize your Google
+                Business Profile so customers can find the right business information when they search.</p>
+              <span
+                class="mt-6 inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out group-hover:gap-3">Optimize
+                My Profile <span aria-hidden="true">→</span></span>
             </div>
-          </article>
-
-          <article class="cat-card reveal">
-            <figure class="overflow-hidden">
-              <img
-                src="../assets/images/shared/service-google-ads.webp?v=8"
-                alt="Illustrated Google Ads service banner for paid search campaigns"
+          </a>
+          <a href="google-maps-review-management.html"
+            class="svc-card reveal group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white shadow-lift transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+            <div class="overflow-hidden">
+              <img data-cms-src="page.svc_card_reviews_image" src="../assets/images/shared/service-google-business-reviews.webp?v=10"
+                alt="Illustrated Google Reviews service banner with star rating graphics" class="w-full object-cover object-center"
+                width="1600" height="639" loading="lazy" decoding="async" />
+            </div>
+            <div class="flex flex-1 flex-col p-7">
+              <p class="text-xs tracking-[0.18em] text-ink/40" data-cms="page.svc2_label">02 · Google Reviews</p>
+              <h3 class="mt-3 font-serif text-2xl leading-snug" data-cms="page.svc2_title">Get More Genuine Google Reviews</h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-ink/65" data-cms="page.svc2_lead">Turn completed jobs and happy customers into
+                authentic Google reviews that build trust before someone calls.</p>
+              <span
+                class="mt-6 inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out group-hover:gap-3">Improve
+                My Reviews <span aria-hidden="true">→</span></span>
+            </div>
+          </a>
+          <a href="google-ads-campaigns.html"
+            class="svc-card reveal group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white shadow-lift transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+            <div class="overflow-hidden">
+              <img data-cms-src="page.svc_card_ads_image" src="../assets/images/shared/service-google-ads.webp?v=10" alt="Illustrated Google Ads service banner for paid search"
                 class="w-full object-cover object-center" width="1600" height="1077" loading="lazy" decoding="async" />
-            </figure>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="text-xs text-ink/40">03 · Google Ads</p>
-                <h2 class="mt-3 font-serif text-2xl sm:text-3xl">Google Ads</h2>
-                <p class="mt-4 text-sm leading-relaxed text-ink/65">Search campaigns aimed at people who are already
-                  looking to hire, book, or buy. We set the account up so spend goes toward leads you can close, then we
-                  cut the queries that never should have been there.</p>
-              </div>
-              <a href="google-ads-campaigns.html" class="link-arrow mt-8 inline-flex w-fit text-sm font-medium">Read the
-                Ads page</a>
             </div>
-          </article>
-
-          <article class="cat-card reveal">
-            <figure class="overflow-hidden">
-              <img
-                src="../assets/images/shared/service-web-development.webp?v=8"
+            <div class="flex flex-1 flex-col p-7">
+              <p class="text-xs tracking-[0.18em] text-ink/40" data-cms="page.svc3_label">03 · Google Ads</p>
+              <h3 class="mt-3 font-serif text-2xl leading-snug" data-cms="page.svc3_title">Get In Front of Customers Ready to Buy</h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-ink/65" data-cms="page.svc3_lead">We build Google Search campaigns around
+                high-intent searches so your budget is focused on people actively looking for your service.</p>
+              <span
+                class="mt-6 inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out group-hover:gap-3">Launch
+                My Google Ads <span aria-hidden="true">→</span></span>
+            </div>
+          </a>
+          <a href="web-development.html"
+            class="svc-card reveal group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white shadow-lift transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+            <div class="overflow-hidden">
+              <img data-cms-src="page.svc_card_web_image" src="../assets/images/shared/service-web-development.webp?v=10"
                 alt="Illustrated website building service banner with code and layout tiles"
                 class="w-full object-cover object-center" width="1600" height="900" loading="lazy" decoding="async" />
-            </figure>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="text-xs text-ink/40">04 · Website Building</p>
-                <h2 class="mt-3 font-serif text-2xl sm:text-3xl">Website Building</h2>
-                <p class="mt-4 text-sm leading-relaxed text-ink/65">A site for businesses that still do not have one.
-                  Custom-coded or CMS, mobile-first, with click-to-call. You own it outright. Hosting and SSL sit on
-                  Cloudflare at no extra fee. You only pay for the domain.</p>
-              </div>
-              <a href="web-development.html" class="link-arrow mt-8 inline-flex w-fit text-sm font-medium">Read the Web
-                page</a>
             </div>
-          </article>
-
-          <article class="cat-card reveal">
-            <figure class="overflow-hidden">
-              <img
-                src="../assets/images/shared/service-google-my-business.webp?v=8"
-                alt="Illustrated Local SEO service banner for local search visibility"
-                class="w-full object-cover object-center" width="1600" height="639" loading="lazy" decoding="async" />
-            </figure>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="text-xs text-ink/40">05 · Local SEO</p>
-                <h2 class="mt-3 font-serif text-2xl sm:text-3xl">Local SEO</h2>
-                <p class="mt-4 text-sm leading-relaxed text-ink/65">Local search and Maps visibility support so nearby
-                  customers can find your business when they need your service — with clear, legitimate local SEO work.</p>
-              </div>
-              <a href="local-seo.html" class="link-arrow mt-8 inline-flex w-fit text-sm font-medium">Read Local SEO</a>
+            <div class="flex flex-1 flex-col p-7">
+              <p class="text-xs tracking-[0.18em] text-ink/40" data-cms="page.svc4_label">04 · Website Building</p>
+              <h3 class="mt-3 font-serif text-2xl leading-snug" data-cms="page.svc4_title">Turn Google Visitors Into Customers</h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-ink/65" data-cms="page.svc4_lead">Fast, mobile-friendly websites built around
+                calls, bookings, quote requests, and local search—not just pretty pages.</p>
+              <span
+                class="mt-6 inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out group-hover:gap-3">Build
+                My Website <span aria-hidden="true">→</span></span>
             </div>
-          </article>
-
-          <article class="cat-card reveal">
-            <figure class="overflow-hidden">
-              <img
-                src="../assets/images/shared/service-google-business-reviews.webp?v=8"
-                alt="Illustrated negative review removal and reputation support banner"
-                class="w-full object-cover object-center" width="1600" height="639" loading="lazy" decoding="async" />
-            </figure>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="text-xs text-ink/40">06 · Remove Negative Reviews</p>
-                <h2 class="mt-3 font-serif text-2xl sm:text-3xl">Remove Negative Reviews</h2>
-                <p class="mt-4 text-sm leading-relaxed text-ink/65">Careful, policy-compliant help for harmful or unfair
-                  Google reviews — focused on protecting trust the right way, not empty promises.</p>
-              </div>
-              <a href="remove-negative-reviews.html" class="link-arrow mt-8 inline-flex w-fit text-sm font-medium">Read
-                Remove Negative Reviews</a>
+          </a>
+          <a href="local-seo.html"
+            class="svc-card reveal group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white shadow-lift transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+            <div class="overflow-hidden">
+              <img data-cms-src="page.svc_card_local_image" src="../assets/images/shared/service-google-my-business.webp?v=10"
+                alt="Illustrated Local SEO service banner for local search visibility" class="w-full object-cover object-center"
+                width="1600" height="639" loading="lazy" decoding="async" />
             </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="border-t border-line bg-ink px-5 py-16 text-paper lg:px-8 lg:py-24">
-      <div class="mx-auto max-w-7xl">
-        <h2 class="reveal font-serif text-3xl sm:text-4xl">They stack. They do not replace each other.</h2>
-        <div class="mt-10 grid gap-8 md:grid-cols-2">
-          <p class="reveal text-sm leading-relaxed text-paper/70"><span class="block font-medium text-paper">A profile
-              with no reviews</span>Google Business Profile setup puts the pin on the map. Google Reviews fills the
-            stars. They are different jobs.</p>
-          <p class="reveal text-sm leading-relaxed text-paper/70"><span class="block font-medium text-paper">Reviews
-              without a site</span>Maps can still send calls. A website makes those clicks convert when someone wants
-            more than a listing.</p>
-          <p class="reveal text-sm leading-relaxed text-paper/70"><span class="block font-medium text-paper">Ads without
-              a listing</span>You can buy the click. The map pack still has to look open and safe enough to dial. Empty
-            or unclaimed profiles kill expensive traffic.</p>
-          <p class="reveal text-sm leading-relaxed text-paper/70"><span class="block font-medium text-paper">A site with
-              no demand</span>Pretty pages do not get found on their own. Ads, Google My Business, and Maps are how
-            people arrive in the first week.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="proposals" class="border-t border-line bg-mist/50 px-5 py-16 lg:px-8 lg:py-24">
-      <div class="mx-auto max-w-7xl">
-        <p class="text-xs font-medium uppercase tracking-[0.22em] text-ink/45">Proposal options</p>
-        <h2 class="mt-3 font-serif text-3xl sm:text-4xl">Four contracts. Pick where you are stuck.</h2>
-        <p class="mt-4 max-w-2xl text-ink/65">Each service page has two proposal options. Open the page that matches
-          the gap — then request the offer that fits.</p>
-        <div class="mt-10 grid gap-5 md:grid-cols-2">
-          <article class="reveal rounded-3xl border border-line bg-paper p-7">
-            <p class="text-xs uppercase tracking-[0.16em] text-ink/40">Offer 01</p>
-            <h3 class="mt-3 font-serif text-2xl">Google Reviews</h3>
-            <p class="mt-4 text-sm leading-relaxed text-ink/65">Listing exists, reviews do not. From zero or restart a
-              stalled profile — any Maps category.</p>
-            <a href="../index.html?service=Google%20Reviews#contact"
-              class="btn-primary mt-6">Request this proposal</a>
-          </article>
-          <article class="reveal rounded-3xl border border-line bg-paper p-7">
-            <p class="text-xs uppercase tracking-[0.16em] text-ink/40">Offer 02</p>
-            <h3 class="mt-3 font-serif text-2xl">Google Business Profile</h3>
-            <p class="mt-4 text-sm leading-relaxed text-ink/65">New profile setup or optimize an existing listing. Claim,
-              verify, categories, photos, hours. You keep the login.</p>
-            <a href="../index.html?service=Google%20My%20Business#contact"
-              class="btn-primary mt-6">Request this proposal</a>
-          </article>
-          <article class="reveal rounded-3xl border border-line bg-paper p-7">
-            <p class="text-xs uppercase tracking-[0.16em] text-ink/40">Offer 03</p>
-            <h3 class="mt-3 font-serif text-2xl">Google Ads</h3>
-            <p class="mt-4 text-sm leading-relaxed text-ink/65">Launch a new account or rebuild one that burns budget.
-              Google bills media. Townloc bills structure.</p>
-            <a href="../index.html?service=Google%20Ads%20Campaigns#contact"
-              class="btn-primary mt-6">Request this proposal</a>
-          </article>
-          <article class="reveal rounded-3xl border border-line bg-paper p-7">
-            <p class="text-xs uppercase tracking-[0.16em] text-ink/40">Offer 04</p>
-            <h3 class="mt-3 font-serif text-2xl">Website Building</h3>
-            <p class="mt-4 text-sm leading-relaxed text-ink/65">Custom-coded or CMS. Full ownership, Cloudflare hosting
-              and SSL included. You pay only for the domain.</p>
-            <a href="../index.html?service=Website%20Building#contact"
-              class="btn-primary mt-6">Request this proposal</a>
-          </article>
+            <div class="flex flex-1 flex-col p-7">
+              <p class="text-xs tracking-[0.18em] text-ink/40" data-cms="page.svc5_label">05 · Local SEO</p>
+              <h3 class="mt-3 font-serif text-2xl leading-snug" data-cms="page.svc5_title">Get Found by Local Customers Searching Nearby</h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-ink/65" data-cms="page.svc5_lead">We improve your local search presence so nearby
+                customers can find your business when they need your service.</p>
+              <span
+                class="mt-6 inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out group-hover:gap-3">Grow
+                My Local SEO <span aria-hidden="true">→</span></span>
+            </div>
+          </a>
+          <a href="remove-negative-reviews.html"
+            class="svc-card reveal group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white shadow-lift transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+            <div class="overflow-hidden">
+              <img data-cms-src="page.svc_card_neg_image" src="../assets/images/shared/service-google-business-reviews.webp?v=10"
+                alt="Illustrated negative review removal and reputation support banner" class="w-full object-cover object-center"
+                width="1600" height="639" loading="lazy" decoding="async" />
+            </div>
+            <div class="flex flex-1 flex-col p-7">
+              <p class="text-xs tracking-[0.18em] text-ink/40" data-cms="page.svc6_label">06 · Remove Negative Reviews</p>
+              <h3 class="mt-3 font-serif text-2xl leading-snug" data-cms="page.svc6_title">Handle Harmful Reviews the Right Way</h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-ink/65" data-cms="page.svc6_lead">We help you address unfair or damaging Google
+                reviews with a careful process that protects your reputation.</p>
+              <span
+                class="mt-6 inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out group-hover:gap-3">Fix
+                My Reviews <span aria-hidden="true">→</span></span>
+            </div>
+          </a>
         </div>
       </div>
     </section>
@@ -496,8 +398,8 @@
     <form method="dialog" class="mt-6"><button class="btn-secondary">Close</button>
     </form>
   </dialog>
-  <script src="../assets/site.js?v=11"></script>
-  <script src="../assets/cms.js"></script>
+  <script src="../assets/site.js?v=13" defer></script>
+  <script src="../assets/cms.js" defer></script>
 </body>
 
 </html>
