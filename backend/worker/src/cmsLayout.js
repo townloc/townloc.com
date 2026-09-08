@@ -419,3 +419,127 @@ export function applyAllLayout(html, layout) {
   }
   return out;
 }
+
+/** Normalize menu links so they work from any page depth. */
+export function normalizeMenuHref(href) {
+  let h = String(href || "").trim();
+  if (!h) return "";
+  if (/^(https?:|mailto:|tel:|#|\/)/i.test(h)) return h;
+  return "/" + h.replace(/^\.\//, "");
+}
+
+function stripInjectedMenus(html) {
+  return String(html)
+    .replace(/<li\b[^>]*data-cms-extra-menu=["'][^"']*["'][^>]*>[\s\S]*?<\/li>/gi, "")
+    .replace(
+      /<a\b[^>]*data-cms-extra-menu=["'][^"']*["'][^>]*>[\s\S]*?<\/a>/gi,
+      ""
+    );
+}
+
+function injectHeaderMenus(html, items) {
+  if (!items.length) return html;
+  let out = html;
+
+  const desktopLis = items
+    .map((item) => {
+      const id = escapeHtml(item.id);
+      const href = escapeHtml(normalizeMenuHref(item.href));
+      const label = escapeHtml(item.label);
+      return `<li data-cms-extra-menu="${id}"><a class="nav-link opacity-85" href="${href}">${label}</a></li>`;
+    })
+    .join("\n        ");
+
+  // Primary desktop nav list (has several nav-link items)
+  out = out.replace(
+    /(<ul\b[^>]*(?:class=["'][^"']*items-center[^"']*["']|class=["'][^"']*nav[^"']*["'])[^>]*>)([\s\S]*?)(<\/ul>)/i,
+    (full, open, inner, close) => {
+      if (!/nav-link/i.test(inner)) return full;
+      if (/data-cms-extra-menu/i.test(inner)) return full;
+      return `${open}${inner}\n        ${desktopLis}\n      ${close}`;
+    }
+  );
+
+  const mobileAs = items
+    .map((item) => {
+      const id = escapeHtml(item.id);
+      const href = escapeHtml(normalizeMenuHref(item.href));
+      const label = escapeHtml(item.label);
+      return `<a data-cms-extra-menu="${id}" href="${href}" class="mobile-link mobile-menu-item">${label}</a>`;
+    })
+    .join("\n          ");
+
+  if (/mobile-menu-nav/i.test(out)) {
+    if (/mobile-menu-cta/i.test(out)) {
+      out = out.replace(
+        /(<a\b[^>]*class=["'][^"']*mobile-menu-cta[^"']*["'][^>]*>)/i,
+        `${mobileAs}\n          $1`
+      );
+    } else {
+      out = out.replace(
+        /(<div\b[^>]*class=["'][^"']*mobile-menu-nav[^"']*["'][^>]*>)([\s\S]*?)(<\/div>)/i,
+        (full, open, inner, close) => {
+          if (/data-cms-extra-menu/i.test(inner)) return full;
+          return `${open}${inner}\n          ${mobileAs}\n        ${close}`;
+        }
+      );
+    }
+  }
+
+  return out;
+}
+
+function injectFooterMenus(html, items) {
+  if (!items.length) return html;
+  const lis = items
+    .map((item) => {
+      const id = escapeHtml(item.id);
+      const href = escapeHtml(normalizeMenuHref(item.href));
+      const label = escapeHtml(item.label);
+      return `<li data-cms-extra-menu="${id}"><a href="${href}">${label}</a></li>`;
+    })
+    .join("\n            ");
+
+  let out = html;
+  // Prefer Company column
+  if (/footer-col-title[^>]*>\s*Company\s*</i.test(out)) {
+    out = out.replace(
+      /(<p\b[^>]*class=["'][^"']*footer-col-title[^"']*["'][^>]*>\s*Company\s*<\/p>\s*<ul\b[^>]*>)([\s\S]*?)(<\/ul>)/i,
+      (full, open, inner, close) => {
+        if (/data-cms-extra-menu/i.test(inner)) return full;
+        return `${open}${inner}\n            ${lis}\n          ${close}`;
+      }
+    );
+    return out;
+  }
+
+  // Fallback: first footer <ul> that is not ownership
+  out = out.replace(
+    /(<footer\b[\s\S]*?<ul\b(?![^>]*footer-ownership)[^>]*>)([\s\S]*?)(<\/ul>)/i,
+    (full, open, inner, close) => {
+      if (/data-cms-extra-menu/i.test(inner)) return full;
+      if (/footer-ownership/i.test(open)) return full;
+      return `${open}${inner}\n            ${lis}\n          ${close}`;
+    }
+  );
+  return out;
+}
+
+/**
+ * Inject user-added navbar/footer menu items (no frontend file edits).
+ * customMenus: { header: [{id,label,href}], footer: [...] }
+ */
+export function injectCustomMenus(html, customMenus) {
+  const menus =
+    customMenus && typeof customMenus === "object" ? customMenus : {};
+  const header = Array.isArray(menus.header) ? menus.header : [];
+  const footer = Array.isArray(menus.footer) ? menus.footer : [];
+  if (!header.length && !footer.length) {
+    return stripInjectedMenus(html);
+  }
+  let out = stripInjectedMenus(html);
+  out = injectHeaderMenus(out, header);
+  out = injectFooterMenus(out, footer);
+  return out;
+}
+

@@ -13,6 +13,11 @@ export const CMS_DEFAULTS = {
     header: {},
     footer: {},
   },
+  /** Extra navbar/footer links: { header: [{id,label,href}], footer: [...] } */
+  customMenus: {
+    header: [],
+    footer: [],
+  },
   autoPages: {},
   /** User-created service pages: [{ path, title, description?, imageUrl?, created_at }] */
   customPages: [],

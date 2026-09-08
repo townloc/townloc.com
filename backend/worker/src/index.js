@@ -21,6 +21,8 @@ import {
 import {
   extractLayoutEditables,
   applyAllLayout,
+  injectCustomMenus,
+  normalizeMenuHref,
 } from "./cmsLayout.js";
 
 const LAYOUT_SOURCE = "index.html";
@@ -63,6 +65,18 @@ const PAGE_ALLOWLIST_SET = new Set(PAGE_ALLOWLIST);
 
 function customPagesFromDoc(doc) {
   return Array.isArray(doc && doc.customPages) ? doc.customPages : [];
+}
+
+function customMenusFromDoc(doc) {
+  const m = doc && doc.customMenus && typeof doc.customMenus === "object" ? doc.customMenus : {};
+  return {
+    header: Array.isArray(m.header) ? m.header : [],
+    footer: Array.isArray(m.footer) ? m.footer : [],
+  };
+}
+
+function newMenuId() {
+  return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function editablePagePaths(doc) {
@@ -1054,6 +1068,7 @@ async function handleAdminPageCreate(request, env, origin) {
   merged.customPages = customPages;
   if (doc.autoPages) merged.autoPages = doc.autoPages;
   if (doc.layout) merged.layout = doc.layout;
+  if (doc.customMenus) merged.customMenus = doc.customMenus;
   await writeCmsDocument(env, merged);
 
   return json(
@@ -1237,6 +1252,7 @@ async function handleAdminCmsGet(env, origin) {
       fields: CMS_FIELD_META,
       pages: editablePagePaths(data),
       customPages: customPagesFromDoc(data),
+      customMenus: customMenusFromDoc(data),
       mode: "auto+sitewide",
     },
     200,
@@ -1300,16 +1316,19 @@ async function handleAdminCmsLayoutScan(env, origin, region) {
       ? doc.layout[r]
       : {}) || {};
   const fields = mergeFieldValues(discovered, overrides);
+  const menus = customMenusFromDoc(doc);
   return json(
     {
       success: true,
       region: r,
       source: LAYOUT_SOURCE,
       fields,
+      menus: menus[r] || [],
       counts: {
         total: fields.length,
         images: fields.filter((f) => f.kind === "img").length,
         text: fields.filter((f) => f.kind === "text").length,
+        menus: (menus[r] || []).length,
       },
     },
     200,
@@ -1344,6 +1363,7 @@ async function handleAdminCmsPut(request, env, origin) {
     merged.autoPages = autoPages;
     merged.customPages = customPagesFromDoc(current);
     if (current.layout) merged.layout = current.layout;
+    if (current.customMenus) merged.customMenus = current.customMenus;
     await writeCmsDocument(env, merged);
     return json({ success: true, cms: merged, path }, 200, origin);
   }
@@ -1369,6 +1389,7 @@ async function handleAdminCmsPut(request, env, origin) {
     const merged = deepMerge(CMS_DEFAULTS, { ...current, layout });
     merged.layout = layout;
     merged.customPages = customPagesFromDoc(current);
+    merged.customMenus = customMenusFromDoc(current);
     if (current.autoPages) merged.autoPages = current.autoPages;
     await writeCmsDocument(env, merged);
     return json({ success: true, cms: merged, region }, 200, origin);
@@ -1385,8 +1406,116 @@ async function handleAdminCmsPut(request, env, origin) {
   else if (current.layout) merged.layout = current.layout;
   if (incoming.customPages) merged.customPages = incoming.customPages;
   else merged.customPages = customPagesFromDoc(current);
+  if (incoming.customMenus) merged.customMenus = incoming.customMenus;
+  else merged.customMenus = customMenusFromDoc(current);
   await writeCmsDocument(env, merged);
   return json({ success: true, cms: merged }, 200, origin);
+}
+
+async function handleAdminMenuCreate(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+  const region = String(body.region || "").toLowerCase() === "footer" ? "footer" : "header";
+  const label = typeof body.label === "string" ? body.label.trim() : "";
+  const hrefRaw = typeof body.href === "string" ? body.href.trim() : "";
+  if (!label || label.length < 1) {
+    return json({ success: false, message: "Enter a menu name." }, 400, origin);
+  }
+  if (label.length > 80) {
+    return json({ success: false, message: "Menu name is too long." }, 400, origin);
+  }
+  if (!hrefRaw) {
+    return json(
+      { success: false, message: "Enter a link (example: /blog/ or #contact)." },
+      400,
+      origin
+    );
+  }
+  const href = normalizeMenuHref(hrefRaw);
+  if (href.length > 500) {
+    return json({ success: false, message: "Link is too long." }, 400, origin);
+  }
+
+  const current = await readCmsDocument(env);
+  const menus = customMenusFromDoc(current);
+  const entry = {
+    id: newMenuId(),
+    label,
+    href,
+    created_at: new Date().toISOString(),
+  };
+  menus[region] = [...menus[region], entry];
+  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
+  merged.customMenus = menus;
+  if (current.layout) merged.layout = current.layout;
+  if (current.autoPages) merged.autoPages = current.autoPages;
+  if (current.customPages) merged.customPages = current.customPages;
+  await writeCmsDocument(env, merged);
+  return json({ success: true, menu: entry, menus: menus[region], cms: merged }, 201, origin);
+}
+
+async function handleAdminMenuDelete(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+  const region = String(body.region || "").toLowerCase() === "footer" ? "footer" : "header";
+  const id = typeof body.id === "string" ? body.id.trim() : "";
+  if (!id) {
+    return json({ success: false, message: "Missing menu id." }, 400, origin);
+  }
+  const current = await readCmsDocument(env);
+  const menus = customMenusFromDoc(current);
+  menus[region] = menus[region].filter((m) => m && m.id !== id);
+  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
+  merged.customMenus = menus;
+  if (current.layout) merged.layout = current.layout;
+  if (current.autoPages) merged.autoPages = current.autoPages;
+  if (current.customPages) merged.customPages = current.customPages;
+  await writeCmsDocument(env, merged);
+  return json({ success: true, menus: menus[region], cms: merged }, 200, origin);
+}
+
+async function handleAdminMenuUpdate(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+  const region = String(body.region || "").toLowerCase() === "footer" ? "footer" : "header";
+  const id = typeof body.id === "string" ? body.id.trim() : "";
+  if (!id) {
+    return json({ success: false, message: "Missing menu id." }, 400, origin);
+  }
+  const current = await readCmsDocument(env);
+  const menus = customMenusFromDoc(current);
+  const idx = menus[region].findIndex((m) => m && m.id === id);
+  if (idx < 0) {
+    return json({ success: false, message: "Menu item not found." }, 404, origin);
+  }
+  const next = { ...menus[region][idx] };
+  if (typeof body.label === "string" && body.label.trim()) {
+    next.label = body.label.trim().slice(0, 80);
+  }
+  if (typeof body.href === "string" && body.href.trim()) {
+    next.href = normalizeMenuHref(body.href.trim()).slice(0, 500);
+  }
+  menus[region] = menus[region].slice();
+  menus[region][idx] = next;
+  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
+  merged.customMenus = menus;
+  if (current.layout) merged.layout = current.layout;
+  if (current.autoPages) merged.autoPages = current.autoPages;
+  if (current.customPages) merged.customPages = current.customPages;
+  await writeCmsDocument(env, merged);
+  return json({ success: true, menu: next, menus: menus[region], cms: merged }, 200, origin);
 }
 
 async function serveAssetWithCms(request, env) {
@@ -1437,6 +1566,7 @@ async function serveAssetWithCms(request, env) {
     if (overrides) html = applyEditables(html, overrides);
     // Sitewide header/footer menus (auto) — before injecting custom services
     html = applyAllLayout(html, doc.layout);
+    html = injectCustomMenus(html, customMenusFromDoc(doc));
     html = injectCustomServiceNav(html, customPages, pagePath);
     html = injectCustomServiceCards(html, customPages, pagePath);
 
@@ -1483,6 +1613,15 @@ async function handleAdmin(request, env, origin, url) {
   if (path === "/api/admin/cms/layout-scan" && request.method === "GET") {
     const region = url.searchParams.get("region") || "header";
     return handleAdminCmsLayoutScan(env, origin, region);
+  }
+  if (path === "/api/admin/cms/menus" && request.method === "POST") {
+    return handleAdminMenuCreate(request, env, origin);
+  }
+  if (path === "/api/admin/cms/menus" && request.method === "PATCH") {
+    return handleAdminMenuUpdate(request, env, origin);
+  }
+  if (path === "/api/admin/cms/menus" && request.method === "DELETE") {
+    return handleAdminMenuDelete(request, env, origin);
   }
 
   if (path === "/api/admin/settings" && request.method === "GET") {
