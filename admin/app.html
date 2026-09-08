@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Townloc Admin</title>
-  <link rel="stylesheet" href="admin.css?v=2" />
+  <link rel="stylesheet" href="admin.css?v=11" />
 </head>
 
 <body>
@@ -20,7 +20,7 @@
         <button type="button" class="nav-item active" data-nav="dashboard">Dashboard</button>
         <button type="button" class="nav-item" data-nav="leads">Leads</button>
         <button type="button" class="nav-item" data-nav="posts">Posts</button>
-        <button type="button" class="nav-item" data-nav="site-cms">Site CMS</button>
+        <button type="button" class="nav-item" data-nav="site-cms">Pages</button>
         <button type="button" class="nav-item" data-nav="menus">Menus</button>
         <button type="button" class="nav-item" data-nav="settings">Settings</button>
         <button type="button" class="nav-item nav-item-muted" data-nav="pages" title="For developers">Advanced</button>
@@ -180,7 +180,8 @@
 
             <p class="section-title">Featured image</p>
             <label class="field-label" for="post-featured">Featured image URL</label>
-            <input id="post-featured" type="url" placeholder="https://…" />
+            <input id="post-featured" type="text" placeholder="https://… or /assets/images/…" />
+            <div id="post-featured-upload" class="cms-upload-host"></div>
             <div class="form-actions" style="margin-top:0.5rem">
               <button type="button" class="btn btn-secondary btn-sm" id="update-featured-preview">Update
                 Preview</button>
@@ -195,6 +196,13 @@
             <textarea id="post-excerpt" style="min-height:4.5rem"></textarea>
 
             <label class="field-label" for="post-body">Body (HTML)</label>
+            <div class="form-actions post-html-helpers" style="margin:0.35rem 0 0.5rem">
+              <button type="button" class="btn btn-secondary btn-sm" data-html-insert="h2">H2</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-html-insert="p">Paragraph</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-html-insert="strong">Bold</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-html-insert="a">Link</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-html-insert="ul">List</button>
+            </div>
             <textarea id="post-body" class="body"></textarea>
 
             <details class="seo-details">
@@ -207,7 +215,8 @@
               <label class="field-label" for="post-meta-desc">Meta description</label>
               <textarea id="post-meta-desc" style="min-height:4rem"></textarea>
               <label class="field-label" for="post-og">OG image URL</label>
-              <input id="post-og" type="url" placeholder="https://…" />
+              <input id="post-og" type="text" placeholder="https://… or /assets/images/…" />
+              <div id="post-og-upload" class="cms-upload-host"></div>
               <div class="form-actions" style="margin-top:0.5rem">
                 <button type="button" class="btn btn-secondary btn-sm" id="update-og-preview">Update Preview</button>
                 <button type="button" class="btn btn-danger btn-sm" id="og-remove">Remove Image</button>
@@ -220,114 +229,101 @@
             <p class="section-title">Actions</p>
             <div class="form-actions">
               <button type="button" class="btn btn-primary" id="save-post">Save post</button>
+              <a class="btn btn-secondary" id="view-post-live" href="#" target="_blank" rel="noopener noreferrer" hidden>View on site</a>
               <button type="button" class="btn btn-danger" id="delete-post">Delete</button>
             </div>
           </div>
         </section>
 
-        <!-- Site CMS -->
+        <!-- Pages (Site CMS) -->
         <section id="panel-site-cms" class="panel">
           <div class="cms-shell">
             <header class="cms-topbar">
               <div class="cms-topbar-copy">
-                <h2 class="cms-title">Site CMS</h2>
-                <p class="cms-lead">Edit site text, images, and menus. Changes go live after you save.</p>
+                <h2 class="cms-title" id="cms-panel-heading">Pages</h2>
+                <p class="cms-lead" id="cms-lead">
+                  Edit a page, or click Add Page. To show it in the navbar/footer, nest it under a parent in Menus.
+                </p>
               </div>
-              <button type="button" class="btn btn-primary" id="cms-save">Save to site</button>
+              <div class="cms-topbar-actions">
+                <button type="button" class="btn btn-primary" id="cms-add-page-btn">Add Page</button>
+                <button type="button" class="btn btn-secondary" id="cms-back" hidden>← All pages</button>
+                <button type="button" class="btn btn-primary" id="cms-save" hidden>Save to site</button>
+              </div>
             </header>
 
-            <div class="cms-block">
-              <div class="cms-block-head">
-                <h3 class="cms-block-title">1. Choose what to edit</h3>
-                <p class="cms-block-hint">Pick branding, header, footer, or any website page.</p>
-              </div>
-              <div class="cms-toolbar">
-                <div class="cms-toolbar-main">
-                  <label class="cms-inline-label" for="cms-section">Content</label>
-                  <select id="cms-section" class="cms-select">
-                    <optgroup label="Sitewide">
-                      <option value="branding">Branding — logo, name, favicon</option>
-                      <option value="layout:header">Header — menus &amp; buttons</option>
-                      <option value="layout:footer">Footer — menus &amp; text</option>
-                    </optgroup>
-                    <optgroup label="Website pages" id="cms-auto-pages"></optgroup>
-                  </select>
+            <!-- Hidden section state (driven by list Edit buttons) -->
+            <select id="cms-section" hidden aria-hidden="true">
+              <option value="branding">Branding</option>
+              <option value="layout:header">Header text</option>
+              <option value="layout:footer">Footer text</option>
+              <optgroup label="Website pages" id="cms-auto-pages"></optgroup>
+            </select>
+
+            <div id="cms-list-view">
+              <div class="cms-block cms-pages-dash">
+                <div class="wp-pages-filters" id="cms-page-filters" role="tablist" aria-label="Page filters">
+                  <button type="button" class="wp-pages-filter is-active" data-page-filter="all">All <span id="cms-filter-count-all">0</span></button>
+                  <button type="button" class="wp-pages-filter" data-page-filter="site">Site pages <span id="cms-filter-count-site">0</span></button>
+                  <button type="button" class="wp-pages-filter" data-page-filter="custom">Custom <span id="cms-filter-count-custom">0</span></button>
+                  <button type="button" class="btn btn-secondary btn-sm wp-pages-refresh" id="cms-reload">Refresh</button>
                 </div>
-                <div class="cms-toolbar-side">
-                  <label class="cms-inline-label" for="cms-field-filter">Show</label>
-                  <select id="cms-field-filter" class="cms-select cms-select-sm">
-                    <option value="all" selected>Text + images</option>
-                    <option value="text">Text only</option>
-                    <option value="images">Images only</option>
-                  </select>
-                  <button type="button" class="btn btn-secondary btn-sm" id="cms-reload">Refresh</button>
+
+                <div class="wp-pages-table-wrap">
+                  <div class="wp-pages-table-head">
+                    <span>Title</span>
+                  </div>
+                  <div id="cms-page-list" class="cms-page-list wp-pages-list"></div>
                 </div>
+                <p class="hint" style="margin:0.75rem 0 0">
+                  New pages open in the editor. Put them under any menu item in <strong>Menus</strong> to make a dropdown.
+                </p>
               </div>
             </div>
 
-            <details class="cms-block cms-add-page">
-              <summary class="cms-add-summary">
-                <span class="cms-block-title">Add a new service page</span>
-                <span class="cms-block-hint">Optional — create another service from the template</span>
-              </summary>
-              <div class="cms-add-body">
-                <div class="form-row">
+            <div id="cms-edit-view" hidden>
+              <div class="cms-block cms-block-fields">
+                <div class="cms-block-head cms-block-head-row">
                   <div>
-                    <label class="field-label" for="cms-new-title">Service name</label>
-                    <input type="text" id="cms-new-title" placeholder="e.g. Citation Building" maxlength="120" />
+                    <h3 class="cms-block-title" id="cms-edit-title">Edit</h3>
+                    <p class="cms-block-hint" id="cms-status">Loading…</p>
                   </div>
-                  <div>
-                    <label class="field-label" for="cms-new-image">Image link (optional)</label>
-                    <input type="text" id="cms-new-image" placeholder="https://… or /assets/images/…" maxlength="500" />
+                  <div class="cms-toolbar-side" id="cms-field-filter-wrap">
+                    <label class="cms-inline-label" for="cms-field-filter">Show</label>
+                    <select id="cms-field-filter" class="cms-select cms-select-sm">
+                      <option value="all" selected>Text + images</option>
+                      <option value="text">Text only</option>
+                      <option value="images">Images only</option>
+                    </select>
                   </div>
                 </div>
-                <label class="field-label" for="cms-new-desc">Short description (optional)</label>
-                <textarea id="cms-new-desc" rows="2" placeholder="One or two sentences about this service" maxlength="500"></textarea>
-                <div class="form-actions" style="margin-top:0.75rem">
-                  <button type="button" class="btn btn-secondary" id="cms-create-page">Create service page</button>
-                </div>
-                <p id="cms-create-status" class="hint" style="margin:0.5rem 0 0"></p>
+                <div id="cms-fields" class="cms-fields"></div>
               </div>
-            </details>
-
-            <div class="cms-block cms-block-fields">
-              <div class="cms-block-head">
-                <h3 class="cms-block-title">2. Edit fields</h3>
-                <p class="cms-block-hint" id="cms-status">Select content above to load editable fields.</p>
-              </div>
-              <div id="cms-fields" class="cms-fields"></div>
             </div>
           </div>
         </section>
 
-        <!-- Menus -->
+        <!-- Menus (WordPress-style) -->
         <section id="panel-menus" class="panel">
           <div class="wp-menus">
             <header class="cms-topbar">
               <div class="cms-topbar-copy">
                 <h2 class="cms-title">Menus</h2>
                 <p class="cms-lead">
-                  Pick Primary or Footer, add items on the left, arrange on the right, then Save Menu.
+                  Add pages or links on the left, arrange (drag) on the right, assign Primary or Footer, then Save Menu.
                 </p>
               </div>
               <button type="button" class="btn btn-primary" id="menus-save-btn">Save Menu</button>
             </header>
 
             <div class="wp-menus-select-bar card">
-              <div class="wp-loc-tabs" role="tablist" aria-label="Menu location">
-                <button type="button" class="wp-loc-tab active" data-edit-loc="primary" id="menus-tab-primary">
-                  Primary Menu (Navbar)
-                </button>
-                <button type="button" class="wp-loc-tab" data-edit-loc="footer" id="menus-tab-footer">
-                  Footer Menu
-                </button>
+              <div class="wp-menus-select-row">
+                <label class="field-label" for="menus-select" style="margin:0">Select a menu to edit:</label>
+                <select id="menus-select" class="cms-select"></select>
+                <button type="button" class="btn btn-secondary btn-sm" id="menus-create">Create a new menu</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="menus-reload">Refresh</button>
               </div>
-              <select id="menus-select" hidden>
-                <option value="primary" selected>primary</option>
-                <option value="footer">footer</option>
-              </select>
-              <button type="button" class="btn btn-secondary btn-sm" id="menus-reload">Refresh</button>
-              <p id="menus-save-status" class="hint" style="margin:0"></p>
+              <p id="menus-save-status" class="hint" style="margin:0.35rem 0 0"></p>
             </div>
 
             <div class="wp-menus-grid">
@@ -337,18 +333,18 @@
                 <details class="wp-acc" open>
                   <summary>Pages</summary>
                   <div class="wp-acc-body">
-                    <p class="hint" style="margin:0 0 0.55rem">Click <strong>Add</strong> next to a page (or tick several, then Add selected).</p>
+                    <p class="hint" style="margin:0 0 0.55rem">Tick pages, then <strong>Add to Menu</strong>.</p>
                     <div id="menus-pages-list" class="wp-check-list"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="menus-add-pages">Add selected</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="menus-add-pages">Add to Menu</button>
                   </div>
                 </details>
 
                 <details class="wp-acc">
                   <summary>Posts</summary>
                   <div class="wp-acc-body">
-                    <p class="hint" style="margin:0 0 0.55rem">Click <strong>Add</strong> next to a post.</p>
+                    <p class="hint" style="margin:0 0 0.55rem">Published posts only.</p>
                     <div id="menus-posts-list" class="wp-check-list"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="menus-add-posts">Add selected</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="menus-add-posts">Add to Menu</button>
                   </div>
                 </details>
 
@@ -356,7 +352,7 @@
                   <summary>Custom Links</summary>
                   <div class="wp-acc-body">
                     <label class="field-label" for="menus-custom-href">URL</label>
-                    <input type="text" id="menus-custom-href" placeholder="https://… or /page.html or #section" maxlength="500" />
+                    <input type="text" id="menus-custom-href" placeholder="https://… or /page.html" maxlength="500" />
                     <label class="field-label" for="menus-custom-label">Link Text</label>
                     <input type="text" id="menus-custom-label" placeholder="Menu label" maxlength="80" />
                     <button type="button" class="btn btn-primary btn-sm" id="menus-add-custom" style="margin-top:0.65rem">Add to Menu</button>
@@ -372,13 +368,25 @@
 
                 <h3 class="wp-menus-col-title">Menu structure</h3>
                 <p class="hint" style="margin:0 0 0.85rem" id="menus-location-hint">
-                  Editing Primary (Navbar) menu.
+                  This menu shows where you assign it below. Drag to reorder; use Add sub-item or drop indented under a top item for a dropdown.
                 </p>
                 <div id="menus-structure" class="wp-structure"></div>
-                <p id="menus-structure-empty" class="cms-empty">No items yet. On the left, click <strong>Add</strong> beside a page — then <strong>Save Menu</strong>.</p>
+                <p id="menus-structure-empty" class="cms-empty">No items yet. Add pages or custom links on the left, then Save Menu.</p>
+
+                <div class="wp-menu-locations">
+                  <p class="wp-menus-col-title" style="margin:0 0 0.5rem">Display location</p>
+                  <label class="wp-loc-check">
+                    <input type="checkbox" id="menus-loc-primary" />
+                    <span>Primary Menu (Navbar)</span>
+                  </label>
+                  <label class="wp-loc-check">
+                    <input type="checkbox" id="menus-loc-footer" />
+                    <span>Footer Menu</span>
+                  </label>
+                </div>
 
                 <div class="wp-menus-footer-actions">
-                  <span class="hint" style="margin:0">Click an item to edit · → makes sub item</span>
+                  <button type="button" class="btn btn-ghost btn-sm wp-menus-delete" id="menus-delete">Delete Menu</button>
                   <button type="button" class="btn btn-primary" id="menus-save-btn-2">Save Menu</button>
                 </div>
               </div>
@@ -390,7 +398,8 @@
         <section id="panel-pages" class="panel">
           <div class="card" style="margin-bottom:1rem">
             <p class="hint" style="margin:0">
-              For developers only. Day-to-day edits: use <em>Site CMS</em>.
+              <strong>Developer only.</strong> Raw HTML edit and “Publish to GitHub” can overwrite live pages.
+              Day-to-day content: use <em>Site CMS</em> and <em>Menus</em>. Do not publish unless you know what you are changing.
             </p>
           </div>
           <div class="grid-2">
@@ -442,6 +451,8 @@
             <p class="hint" style="margin:0">Status: <span class="badge badge-published">Logged in</span></p>
             <p class="hint" style="margin:0.35rem 0 0">The session token stays in this browser only. Secrets are never
               shown here.</p>
+            <p class="hint" style="margin:0.35rem 0 0">To change the admin password, update the Worker secret
+              <code>ADMIN_PASSWORD</code> (Wrangler), then redeploy.</p>
             <div class="form-actions">
               <button type="button" class="btn btn-danger" id="settings-logout">Log out</button>
             </div>
@@ -470,6 +481,25 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="add-page-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-page-title">
+      <h3 id="add-page-title">Add Page</h3>
+      <p class="hint" style="margin:0 0 0.75rem">
+        Creates a new page you can edit with sections. To show it in the header/footer, nest it under a parent in Menus.
+      </p>
+      <label class="field-label" for="cms-new-title">Page name</label>
+      <input type="text" id="cms-new-title" placeholder="e.g. Citation Building" maxlength="120" />
+      <label class="field-label" for="cms-new-desc">Short description (optional)</label>
+      <textarea id="cms-new-desc" rows="2" placeholder="One or two sentences" maxlength="500"></textarea>
+      <input type="hidden" id="cms-new-image" value="" />
+      <p id="cms-create-status" class="hint" style="margin:0.5rem 0 0"></p>
+      <div class="form-actions" style="margin-top:1rem">
+        <button type="button" class="btn btn-secondary" id="cms-add-page-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="cms-create-page">Create page</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-backdrop" id="confirm-modal" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
@@ -500,7 +530,7 @@
   </div>
 
   <script src="admin.js"></script>
-  <script src="admin-app.js?v=2"></script>
+  <script src="admin-app.js?v=16"></script>
 </body>
 
 </html>

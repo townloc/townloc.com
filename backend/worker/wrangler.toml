@@ -39,7 +39,7 @@ SENDER_EMAIL = "townloc <contact@townloc.com>"
 #   npx wrangler secret put GITHUB_TOKEN   (optional — needed to publish pages to repo)
 #
 # GitHub publish (optional vars)
-GITHUB_REPO = ""
+GITHUB_REPO = "townloc/townloc.com"
 GITHUB_BRANCH = "main"
 
 [[d1_databases]]

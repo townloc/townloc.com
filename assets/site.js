@@ -4,6 +4,27 @@
   document.documentElement.classList.add("js");
   document.documentElement.classList.add("is-ready");
 
+  /* Smooth hero media: fade image only after it's decoded (no design/content change). */
+  (function readyHeroBanner() {
+    var banner = document.querySelector(".hero-banner");
+    var img = banner && banner.querySelector(".hero-banner-img");
+    if (!banner || !img) return;
+    var done = false;
+    function mark() {
+      if (done) return;
+      done = true;
+      banner.classList.add("is-media-ready");
+    }
+    if (img.complete && img.naturalWidth > 0) {
+      mark();
+      return;
+    }
+    img.addEventListener("load", mark, { once: true });
+    img.addEventListener("error", mark, { once: true });
+    // Fallback if load event was missed
+    window.setTimeout(mark, 2500);
+  })();
+
   var siteHeader = document.getElementById("site-header");
   if (siteHeader) {
     var onScroll = function () {
@@ -29,7 +50,7 @@
   window.addEventListener("scroll", markNav, { passive: true });
   markNav();
 
-  /* Same-page section links: scroll without leaving # in the URL */
+  /* Same-page / clean cross-page section links — no # or .html in the address bar */
   function scrollToId(id) {
     var el = document.getElementById(id);
     if (!el) return false;
@@ -37,44 +58,261 @@
     return true;
   }
 
-  function stripHashFromUrl() {
-    if (!location.hash) return;
-    history.replaceState(null, "", location.pathname + location.search);
+  function prettyPath(pathname) {
+    var p = String(pathname || "/");
+    if (/^\/index\.html$/i.test(p)) return "/";
+    if (/\/index\.html$/i.test(p)) {
+      var dir = p.replace(/\/index\.html$/i, "/");
+      return dir || "/";
+    }
+    if (/\.html$/i.test(p)) return p.replace(/\.html$/i, "");
+    return p;
+  }
+
+  function prettyHref(url) {
+    return prettyPath(url.pathname) + (url.search || "");
+  }
+
+  function toPrettyHrefString(href, anchor) {
+    if (!href || /^(mailto:|tel:|javascript:)/i.test(href)) return null;
+    try {
+      if (href.charAt(0) === "#") {
+        var onlyId = decodeURIComponent(href.slice(1));
+        if (!onlyId) return null;
+        if (anchor) anchor.setAttribute("data-townloc-section", onlyId);
+        return currentPrettyUrl();
+      }
+      var url = new URL(href, location.href);
+      if (url.origin !== location.origin) return null;
+      if (
+        /\.(css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|pdf|xml|txt|json|mp4|webm)$/i.test(
+          url.pathname
+        )
+      ) {
+        return null;
+      }
+      if (url.hash && url.hash.length > 1) {
+        var sid = decodeURIComponent(url.hash.slice(1));
+        if (sid && anchor) anchor.setAttribute("data-townloc-section", sid);
+      }
+      var next = prettyPath(url.pathname) + (url.search || "");
+      return next === href ? null : next;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function currentPrettyUrl() {
+    return prettyPath(location.pathname) + location.search;
+  }
+
+  /** So browser status-bar hover never shows index.html / *.html / #section */
+  function rewriteAllAnchorHrefs() {
+    document.querySelectorAll("a[href]").forEach(function (a) {
+      var href = a.getAttribute("href");
+      var next = toPrettyHrefString(href, a);
+      if (next != null) a.setAttribute("href", next);
+    });
+  }
+  rewriteAllAnchorHrefs();
+
+  function stripUglyFromAddressBar() {
+    var pretty = currentPrettyUrl();
+    var now = location.pathname + location.search + location.hash;
+    if (now !== pretty) {
+      history.replaceState(null, "", pretty);
+    }
+  }
+
+  function isHomePath(pathname) {
+    var p = String(pathname || "/").replace(/\/+$/, "") || "/";
+    return p === "/" || /(^|\/)index\.html$/i.test(p);
+  }
+
+  function pathsMatch(a, b) {
+    var pa = prettyPath(a).replace(/\/+$/, "") || "/";
+    var pb = prettyPath(b).replace(/\/+$/, "") || "/";
+    return pa === pb;
+  }
+
+  var SCROLL_KEY = "townloc_scroll_to";
+
+  function sectionIdFromLink(link, href) {
+    if (link) {
+      var data = link.getAttribute("data-townloc-section");
+      if (data) return data;
+      var nav = link.getAttribute("data-nav");
+      if (nav) return nav;
+    }
+    if (!href) return null;
+    if (href.charAt(0) === "#") return decodeURIComponent(href.slice(1)) || null;
+    try {
+      var url = new URL(href, location.href);
+      if (url.hash && url.hash.length > 1) {
+        return decodeURIComponent(url.hash.slice(1)) || null;
+      }
+    } catch (err) {}
+    return null;
+  }
+
+  /** Local section on this page. */
+  function samePageSectionId(link, href) {
+    var id = sectionIdFromLink(link, href);
+    if (!id || !document.getElementById(id)) return null;
+    // Prefer staying on this page whenever the section exists here
+    // (Contact on service pages; Work/Trust/FAQ on home).
+    if (href && href.charAt(0) !== "#") {
+      try {
+        var url = new URL(href, location.href);
+        if (url.search && isHomePath(url.pathname) && !isHomePath(location.pathname)) {
+          return null; // ?service=… must go home
+        }
+      } catch (err) {}
+    }
+    return id;
+  }
+
+  /** Section not on this page → go clean URL + scroll after load. */
+  function crossPageSectionNav(link, href) {
+    var id = sectionIdFromLink(link, href);
+    if (!id || document.getElementById(id)) return null;
+    try {
+      var url =
+        href && href.charAt(0) !== "#"
+          ? new URL(href, location.href)
+          : new URL("/", location.href);
+      if (url.origin !== location.origin) return null;
+      return { id: id, cleanUrl: prettyHref(url) || "/" };
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function shouldRewriteInternalNav(link, href) {
+    if (!link || !href) return null;
+    if (link.classList.contains("legal-link")) return null;
+    if (link.hasAttribute("download")) return null;
+    if (link.target && link.target !== "" && link.target !== "_self") return null;
+    if (/^(mailto:|tel:|javascript:)/i.test(href)) return null;
+    try {
+      var url = new URL(href, location.href);
+      if (url.origin !== location.origin) return null;
+      if (
+        /\.(css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|pdf|xml|txt|json|mp4|webm)$/i.test(
+          url.pathname
+        )
+      ) {
+        return null;
+      }
+      var pretty = prettyHref(url);
+      var rawPathSearch = url.pathname + url.search;
+      if (pretty === rawPathSearch && !url.hash) return null;
+      return { url: url, pretty: pretty };
+    } catch (err) {
+      return null;
+    }
   }
 
   document.addEventListener("click", function (event) {
-    var link = event.target.closest("a[href^='#']");
-    if (!link || link.classList.contains("legal-link")) return;
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    var link = event.target.closest("a[href]");
+    if (!link) return;
     var href = link.getAttribute("href") || "";
-    if (href.length < 2) return;
-    var id = decodeURIComponent(href.slice(1));
-    if (!document.getElementById(id)) return;
+
+    var localId = samePageSectionId(link, href);
+    if (localId) {
+      event.preventDefault();
+      scrollToId(localId);
+      stripUglyFromAddressBar();
+      if (typeof setMobileOpen === "function") setMobileOpen(false);
+      return;
+    }
+
+    var remote = crossPageSectionNav(link, href);
+    if (remote) {
+      event.preventDefault();
+      try {
+        sessionStorage.setItem(SCROLL_KEY, remote.id);
+      } catch (err) {}
+      if (typeof leavePageNow === "function") leavePageNow();
+      location.assign(remote.cleanUrl);
+      return;
+    }
+
+    var rewrite = shouldRewriteInternalNav(link, href);
+    if (!rewrite) return;
     event.preventDefault();
-    scrollToId(id);
-    history.replaceState(null, "", location.pathname + location.search);
+    if (typeof leavePageNow === "function") leavePageNow();
+    if (pathsMatch(rewrite.url.pathname, location.pathname) && rewrite.url.search === location.search) {
+      stripUglyFromAddressBar();
+      var sectionStay = sectionIdFromLink(link, href);
+      if (sectionStay && document.getElementById(sectionStay)) {
+        scrollToId(sectionStay);
+        if (typeof setMobileOpen === "function") setMobileOpen(false);
+        return;
+      }
+      // Already on this page (e.g. home logo) — scroll to top instead of a dead click.
+      window.scrollTo({
+        top: 0,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+      if (typeof setMobileOpen === "function") setMobileOpen(false);
+      return;
+    }
+    location.assign(rewrite.pretty);
   });
 
-  if (location.hash.length > 1) {
-    var bootId = decodeURIComponent(location.hash.slice(1));
-    if (document.getElementById(bootId)) {
-      window.setTimeout(function () {
-        scrollToId(bootId);
-        stripHashFromUrl();
-      }, 0);
+  try {
+    var pendingScroll = sessionStorage.getItem(SCROLL_KEY);
+    if (pendingScroll) {
+      sessionStorage.removeItem(SCROLL_KEY);
+      if (document.getElementById(pendingScroll)) {
+        window.setTimeout(function () {
+          scrollToId(pendingScroll);
+        }, 0);
+      }
     }
+  } catch (err) {}
+
+  // Capture bookmarked #section, then drop .html / # from the address bar.
+  var bootHashId =
+    location.hash.length > 1
+      ? decodeURIComponent(location.hash.slice(1))
+      : "";
+  stripUglyFromAddressBar();
+  if (bootHashId && document.getElementById(bootHashId)) {
+    window.setTimeout(function () {
+      scrollToId(bootHashId);
+    }, 0);
   }
 
   var menuBtn = document.getElementById("menu-btn");
   var mobileMenu = document.getElementById("mobile-menu");
   var iconOpen = document.getElementById("icon-open");
   var iconClose = document.getElementById("icon-close");
-  var mobileServicesBtn = document.getElementById("mobile-services-btn");
-  var mobileServices = document.getElementById("mobile-services");
+  var mobileServicesBtn =
+    document.getElementById("mobile-services-btn") ||
+    document.querySelector(".mobile-services-btn");
+  var mobileServices =
+    document.getElementById("mobile-services") ||
+    (mobileServicesBtn &&
+      mobileServicesBtn.closest(".mobile-menu-item") &&
+      mobileServicesBtn.closest(".mobile-menu-item").querySelector(".mobile-services"));
 
   function setServicesOpen(open) {
-    if (!mobileServices || !mobileServicesBtn) return;
-    mobileServices.classList.toggle("is-open", open);
-    mobileServicesBtn.setAttribute("aria-expanded", String(open));
+    document.querySelectorAll(".mobile-services").forEach(function (panel) {
+      panel.classList.toggle("is-open", open && panel === mobileServices);
+    });
+    document.querySelectorAll(".mobile-services-btn").forEach(function (btn) {
+      var item = btn.closest(".mobile-menu-item");
+      var panel = item && item.querySelector(".mobile-services");
+      var isTarget = panel && panel === mobileServices;
+      btn.setAttribute("aria-expanded", String(Boolean(open && isTarget)));
+    });
   }
 
   function setMobileOpen(open) {
@@ -158,11 +396,23 @@
       setServicesOpen(!mobileServices.classList.contains("is-open"));
     });
   }
+  // Extra CMS dropdowns (non-Services): toggle their own panel
+  document.querySelectorAll(".mobile-services-btn").forEach(function (btn) {
+    if (btn === mobileServicesBtn) return;
+    btn.addEventListener("click", function () {
+      var item = btn.closest(".mobile-menu-item");
+      var panel = item && item.querySelector(".mobile-services");
+      if (!panel) return;
+      var open = !panel.classList.contains("is-open");
+      panel.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+    });
+  });
 
   document.querySelectorAll(".mobile-link, .nav-drop-item").forEach(function (link) {
     link.addEventListener("click", function () {
       var href = link.getAttribute("href") || "";
-      if (href.charAt(0) === "#") {
+      if (href.charAt(0) === "#" || samePageSectionId(link, href) || link.getAttribute("data-townloc-section")) {
         setMobileOpen(false);
         return;
       }

@@ -1,6 +1,6 @@
 /**
- * Auto CMS — scan any HTML page's <main> for headings/paragraphs/images.
- * Reusable: no hand-written field lists per site page.
+ * Auto CMS — scan any HTML page's <main> for headings/paragraphs/CTAs/images.
+ * Stable field ids + legacy text:N / img:N for backward compatibility.
  */
 
 function escapeHtml(s) {
@@ -18,6 +18,15 @@ function stripTags(html) {
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function shortHash(s) {
+  let h = 0;
+  const str = String(s || "");
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h).toString(36).slice(0, 8);
 }
 
 function getSrc(attrs) {
@@ -43,14 +52,26 @@ function setSrc(attrs, src) {
   return `${attrs} src="${safe}"`;
 }
 
+function getAttr(attrs, name) {
+  const re = new RegExp(
+    `(?:^|\\s)${name}\\s*=\\s*"([^"]*)"|(?:^|\\s)${name}\\s*=\\s*'([^']*)'`,
+    "i"
+  );
+  const m = String(attrs).match(re);
+  return m ? m[1] || m[2] || "" : "";
+}
+
 /** Map request path → HTML file in assets */
 export function htmlPathFromUrl(pathname) {
   let p = String(pathname || "/").split("?")[0].split("#")[0];
   p = p.replace(/\\/g, "/");
   if (!p.startsWith("/")) p = "/" + p;
   if (p === "/") return "index.html";
-  if (p.endsWith("/")) p += "index.html";
-  if (!/\.[a-z0-9]+$/i.test(p)) p += "/index.html";
+  // Directory URLs keep index.html (e.g. /blog/ → blog/index.html).
+  if (p.endsWith("/")) return (p + "index.html").replace(/^\//, "");
+  // Clean leaf URLs map to sibling .html files (e.g. /services/foo →
+  // services/foo.html). CMS custom pages and static service pages use this.
+  if (!/\.[a-z0-9]+$/i.test(p)) return (p + ".html").replace(/^\//, "");
   return p.replace(/^\//, "");
 }
 
@@ -95,7 +116,6 @@ function fileNameFromSrc(src) {
   }
 }
 
-/** Prefer first H1/H2 text, else section id / class hint. */
 function sectionLabel(attrs, innerHtml) {
   const hm = String(innerHtml).match(/<(h1|h2)\b[^>]*>([\s\S]*?)<\/\1>/i);
   if (hm) {
@@ -109,10 +129,6 @@ function sectionLabel(attrs, innerHtml) {
   return "Section";
 }
 
-/**
- * Split <main> into <section> chunks (plus loose content between them).
- * Pages without sections become one chunk.
- */
 function contentChunks(body) {
   const chunks = [];
   const re = /<section\b([^>]*)>([\s\S]*?)<\/section>/gi;
@@ -122,7 +138,10 @@ function contentChunks(body) {
   while ((m = re.exec(body))) {
     if (m.index > last) {
       const between = body.slice(last, m.index);
-      if (/<img\b/i.test(between) || /<(h1|h2|h3|p)\b/i.test(between)) {
+      if (
+        /<img\b/i.test(between) ||
+        /<(h1|h2|h3|p|a|button)\b/i.test(between)
+      ) {
         looseN += 1;
         chunks.push({
           attrs: "",
@@ -140,7 +159,7 @@ function contentChunks(body) {
   }
   if (last < body.length) {
     const rest = body.slice(last);
-    if (/<img\b/i.test(rest) || /<(h1|h2|h3|p)\b/i.test(rest)) {
+    if (/<img\b/i.test(rest) || /<(h1|h2|h3|p|a|button)\b/i.test(rest)) {
       chunks.push({
         attrs: "",
         html: rest,
@@ -154,9 +173,42 @@ function contentChunks(body) {
   return chunks;
 }
 
+function isCtaCandidate(tag, attrs, text) {
+  if (text.length < 4 || text.length > 80) return false;
+  const cls = getAttr(attrs, "class") || "";
+  const href = getAttr(attrs, "href") || "";
+  if (tag === "button") return true;
+  if (tag === "a") {
+    if (/\bbtn[-_]|\bheader-cta\b|\bfooter-cta\b/i.test(cls)) return true;
+    if (/rounded-full/.test(cls) && /font-medium|btn/i.test(cls)) return true;
+    if (/^#/.test(href) && text.length >= 6) return true;
+  }
+  return false;
+}
+
+function stableImgId(src) {
+  const base = fileNameFromSrc(src).replace(/[^a-z0-9._-]+/gi, "-").toLowerCase();
+  return `img:s:${shortHash(src)}:${base.slice(0, 24)}`;
+}
+
+function stableTextId(tag, text, dataCms) {
+  if (dataCms) return `text:s:${String(dataCms).replace(/[^a-z0-9._:-]+/gi, "-")}`;
+  return `text:s:${tag}:${shortHash(text.slice(0, 80))}`;
+}
+
+function pickOverride(overrides, stableId, legacyId) {
+  if (!overrides) return null;
+  if (overrides[stableId] != null && String(overrides[stableId]).trim() !== "") {
+    return overrides[stableId];
+  }
+  if (legacyId && overrides[legacyId] != null && String(overrides[legacyId]).trim() !== "") {
+    return overrides[legacyId];
+  }
+  return null;
+}
+
 /**
- * Collect img + text nodes in document order inside one HTML chunk.
- * Global img:/text: ids stay stable (same order as applyEditables).
+ * Collect img + text + CTA nodes in document order inside one HTML chunk.
  */
 function collectOrdered(html, counters, group) {
   const items = [];
@@ -165,42 +217,88 @@ function collectOrdered(html, counters, group) {
   while ((m = imgRe.exec(html))) {
     const src = getSrc(m[1]);
     if (!src || /^data:/i.test(src)) continue;
-    items.push({ pos: m.index, kind: "img", src });
+    items.push({ pos: m.index, kind: "img", src, attrs: m[1] });
   }
+
   const textRe = /<(h1|h2|h3|p)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
   while ((m = textRe.exec(html))) {
     const tag = m[1].toLowerCase();
+    const attrs = m[2] || "";
     const rawInner = m[3];
     const text = stripTags(rawInner);
-    if (text.length < 12) continue;
-    if (tag === "p" && text.length < 24) continue;
+    if (text.length < 8) continue;
+    if (tag === "p" && text.length < 16) continue;
     items.push({
       pos: m.index,
       kind: "text",
       tag,
+      attrs,
       text,
       rawInner,
+      dataCms: getAttr(attrs, "data-cms"),
     });
   }
+
+  const ctaRe = /<(a|button)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+  while ((m = ctaRe.exec(html))) {
+    const tag = m[1].toLowerCase();
+    const attrs = m[2] || "";
+    const rawInner = m[3];
+    const text = stripTags(rawInner);
+    if (!isCtaCandidate(tag, attrs, text)) continue;
+    // Skip if this CTA wraps only an image
+    if (/^<img\b/i.test(String(rawInner).trim()) && text.length < 4) continue;
+    items.push({
+      pos: m.index,
+      kind: "cta",
+      tag,
+      attrs,
+      text,
+      rawInner,
+      dataCms: getAttr(attrs, "data-cms"),
+    });
+  }
+
   items.sort((a, b) => a.pos - b.pos);
 
   const fields = [];
   for (const item of items) {
     if (item.kind === "img") {
       const n = counters.imgI++;
+      const legacyId = `img:${n}`;
+      const id = stableImgId(item.src);
       fields.push({
-        id: `img:${n}`,
+        id,
+        legacyId,
         kind: "img",
         type: "url",
         group,
         label: `Image · ${fileNameFromSrc(item.src)}`,
         value: item.src,
-        hint: "Paste image link for this part of the page",
+        hint: "Paste image link or upload for this part of the page",
+      });
+    } else if (item.kind === "cta") {
+      const id = stableTextId("cta", item.text, item.dataCms);
+      fields.push({
+        id,
+        legacyId: null,
+        kind: "text",
+        tag: item.tag,
+        type: "text",
+        group,
+        label: `Button · ${item.text.slice(0, 52)}${
+          item.text.length > 52 ? "…" : ""
+        }`,
+        value: item.text,
+        hadHtml: /<[a-z]/i.test(item.rawInner),
       });
     } else {
       const n = counters.textI++;
+      const legacyId = `text:${n}`;
+      const id = stableTextId(item.tag, item.text, item.dataCms);
       fields.push({
-        id: `text:${n}`,
+        id,
+        legacyId,
         kind: "text",
         tag: item.tag,
         type: item.text.length > 90 ? "textarea" : "text",
@@ -218,8 +316,6 @@ function collectOrdered(html, counters, group) {
 
 /**
  * Discover editable fields from HTML (main content).
- * Fields are ordered by page section, then document order (text + image together).
- * id is stable by kind order: img:0, text:0, ... (matches applyEditables).
  */
 export function extractEditables(html) {
   const { body } = mainScope(html);
@@ -231,33 +327,52 @@ export function extractEditables(html) {
   return fields;
 }
 
-/** Apply saved overrides onto HTML using same discovery order. */
+/** Apply saved overrides onto HTML using stable + legacy ids. */
 export function applyEditables(html, overrides) {
   if (!overrides || typeof overrides !== "object") return html;
   const scope = mainScope(html);
   let body = scope.body;
   let imgI = 0;
+  let textI = 0;
 
   body = body.replace(/<img\b([^>]*)>/gi, (full, attrs) => {
     const src = getSrc(attrs);
     if (!src || /^data:/i.test(src)) return full;
-    const id = `img:${imgI++}`;
-    const next = overrides[id];
+    const legacyId = `img:${imgI++}`;
+    const stableId = stableImgId(src);
+    const next = pickOverride(overrides, stableId, legacyId);
     if (next == null || String(next).trim() === "") return full;
     return `<img${setSrc(attrs, String(next).trim())}>`;
   });
 
-  let textI = 0;
-  body = body.replace(/<(h1|h2|h3|p)\b([^>]*)>([\s\S]*?)<\/\1>/gi, (full, tag, attrs, inner) => {
-    const text = stripTags(inner);
-    if (text.length < 12) return full;
-    if (tag.toLowerCase() === "p" && text.length < 24) return full;
-    const id = `text:${textI++}`;
-    const next = overrides[id];
-    if (next == null || String(next).trim() === "") return full;
-    // Plain text replace (keeps layout tags/classes on the element)
-    return `<${tag}${attrs}>${escapeHtml(String(next).trim())}</${tag}>`;
-  });
+  body = body.replace(
+    /<(h1|h2|h3|p)\b([^>]*)>([\s\S]*?)<\/\1>/gi,
+    (full, tag, attrs, inner) => {
+      const text = stripTags(inner);
+      if (text.length < 8) return full;
+      if (tag.toLowerCase() === "p" && text.length < 16) return full;
+      const legacyId = `text:${textI++}`;
+      const dataCms = getAttr(attrs, "data-cms");
+      const stableId = stableTextId(tag.toLowerCase(), text, dataCms);
+      const next = pickOverride(overrides, stableId, legacyId);
+      if (next == null || String(next).trim() === "") return full;
+      return `<${tag}${attrs}>${escapeHtml(String(next).trim())}</${tag}>`;
+    }
+  );
+
+  body = body.replace(
+    /<(a|button)\b([^>]*)>([\s\S]*?)<\/\1>/gi,
+    (full, tag, attrs, inner) => {
+      const text = stripTags(inner);
+      if (!isCtaCandidate(tag.toLowerCase(), attrs, text)) return full;
+      const dataCms = getAttr(attrs, "data-cms");
+      const stableId = stableTextId("cta", text, dataCms);
+      const next = pickOverride(overrides, stableId, null);
+      if (next == null || String(next).trim() === "") return full;
+      if (/<img\b|<svg\b/i.test(inner)) return full;
+      return `<${tag}${attrs}>${escapeHtml(String(next).trim())}</${tag}>`;
+    }
+  );
 
   if (!scope.hasMain) return body;
   return scope.rebuild(body);
@@ -265,10 +380,20 @@ export function applyEditables(html, overrides) {
 
 export function mergeFieldValues(fields, overrides) {
   const o = overrides && typeof overrides === "object" ? overrides : {};
-  return fields.map((f) => ({
-    ...f,
-    value: o[f.id] != null && String(o[f.id]).trim() !== "" ? o[f.id] : f.value,
-    defaultValue: f.value,
-    overridden: o[f.id] != null && String(o[f.id]).trim() !== "",
-  }));
+  return fields.map((f) => {
+    const viaStable = o[f.id] != null && String(o[f.id]).trim() !== "";
+    const viaLegacy =
+      f.legacyId && o[f.legacyId] != null && String(o[f.legacyId]).trim() !== "";
+    const value = viaStable
+      ? o[f.id]
+      : viaLegacy
+        ? o[f.legacyId]
+        : f.value;
+    return {
+      ...f,
+      value,
+      defaultValue: f.value,
+      overridden: viaStable || viaLegacy,
+    };
+  });
 }

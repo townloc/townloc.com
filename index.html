@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-cms-page="home">
 
 <head>
@@ -31,7 +31,7 @@
   <link rel="apple-touch-icon" href="/assets/images/townloc-favicon.png?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="image" href="assets/images/home/hero-banner.jpg" fetchpriority="high" />
+  <link rel="preload" as="image" href="/assets/images/home/hero-banner.jpg" fetchpriority="high" />
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="https://fonts.gstatic.com/s/outfit/v15/QGYvz_MVcBeNP4NJtEtq.woff2" />
   <link
@@ -42,6 +42,18 @@
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       document.documentElement.classList.add("is-ready");
+      var banner = document.querySelector(".hero-banner");
+      var img = banner && banner.querySelector(".hero-banner-img");
+      if (!banner || !img) return;
+      function markHero() {
+        banner.classList.add("is-media-ready");
+      }
+      if (img.complete && img.naturalWidth > 0) markHero();
+      else {
+        img.addEventListener("load", markHero, { once: true });
+        img.addEventListener("error", markHero, { once: true });
+        window.setTimeout(markHero, 2500);
+      }
     });
     window.setTimeout(function () {
       document.documentElement.classList.add("is-ready");
@@ -2583,15 +2595,19 @@
       html.js .hero-banner .hero-title,
       html.js .hero-banner .hero-lead,
       html.js .hero-banner .hero-actions,
-      html.js .hero-banner .hero-banner-img,
       html.js #trust-strip.hero-trust-strip > .mx-auto > p,
       html.js #trust-strip.hero-trust-strip .trust-badge {
         animation: hero-fade-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
       html.js .hero-banner .hero-banner-img {
-        animation-delay: 0.08s;
-        animation-duration: 0.85s;
+        opacity: 0;
+        transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        animation: none;
+      }
+
+      html.js .hero-banner.is-media-ready .hero-banner-img {
+        opacity: 1;
       }
 
       html.js .hero-banner .hero-eyebrow {
@@ -2714,7 +2730,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="assets/site.css?v=22" />
+  <link rel="stylesheet" href="assets/site.css?v=23" />
 </head>
 
 <body class="bg-paper text-ink antialiased">
@@ -2824,7 +2840,7 @@
   <main id="main" class="bg-paper">
     <section class="hero-banner">
       <img class="hero-banner-img" data-cms-src="page.hero_image" src="assets/images/home/hero-banner.jpg" alt="" width="1024" height="358"
-        decoding="async" fetchpriority="high" loading="eager" />
+        decoding="sync" fetchpriority="high" loading="eager" />
       <div class="hero-banner-content px-5 pt-10 pb-12 lg:px-8 lg:pt-12 lg:pb-16">
         <div class="mx-auto w-full max-w-7xl">
           <div class="hero-copy max-w-3xl">
@@ -3711,7 +3727,7 @@
     </form>
   </dialog>
 
-  <script src="assets/site.js?v=2"></script>
+  <script src="assets/site.js?v=11"></script>
   <script src="assets/cms.js"></script>
 </body>
 

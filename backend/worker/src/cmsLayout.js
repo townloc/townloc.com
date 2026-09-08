@@ -420,12 +420,50 @@ export function applyAllLayout(html, layout) {
   return out;
 }
 
-/** Normalize menu links so they work from any page depth. */
+/** Normalize menu links: absolute path, no .html / index.html (hash kept for section targets). */
 export function normalizeMenuHref(href) {
   let h = String(href || "").trim();
   if (!h) return "";
-  if (/^(https?:|mailto:|tel:|#|\/)/i.test(h)) return h;
-  return "/" + h.replace(/^\.\//, "");
+  if (/^(mailto:|tel:)/i.test(h)) return h;
+  if (h.charAt(0) === "#") return h;
+  try {
+    const abs = /^(https?:|\/)/i.test(h) ? h : "/" + h.replace(/^\.\//, "");
+    const url = new URL(abs, "https://townloc.com/");
+    let path = url.pathname || "/";
+    if (/^\/index\.html$/i.test(path)) path = "/";
+    else if (/\/index\.html$/i.test(path)) path = path.replace(/\/index\.html$/i, "/") || "/";
+    else if (/\.html$/i.test(path)) path = path.replace(/\.html$/i, "");
+    return path + (url.search || "") + (url.hash || "");
+  } catch {
+    if (/^(https?:|mailto:|tel:|#|\/)/i.test(h)) return h;
+    return "/" + h.replace(/^\.\//, "");
+  }
+}
+
+/** Split hash into data-townloc-section so hover never shows #section. */
+export function splitMenuHref(href) {
+  const full = normalizeMenuHref(href);
+  if (!full) return { href: "", section: "" };
+  if (/^(mailto:|tel:)/i.test(full)) return { href: full, section: "" };
+  if (full.charAt(0) === "#") {
+    return { href: "/", section: decodeURIComponent(full.slice(1)) };
+  }
+  try {
+    const url = new URL(full, "https://townloc.com/");
+    const section = url.hash ? decodeURIComponent(url.hash.slice(1)) : "";
+    return { href: (url.pathname || "/") + (url.search || ""), section };
+  } catch {
+    return { href: full, section: "" };
+  }
+}
+
+function anchorAttrs(item) {
+  const parts = splitMenuHref(item.href);
+  const href = escapeHtml(parts.href || "/");
+  const section = parts.section
+    ? ` data-townloc-section="${escapeHtml(parts.section)}"`
+    : "";
+  return { href, section, id: escapeHtml(item.id), label: escapeHtml(item.label) };
 }
 
 function stripInjectedMenus(html) {
@@ -470,6 +508,44 @@ function dropCaretSvg() {
   return `<svg class="nav-drop-caret h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>`;
 }
 
+function mobileServicesCaretSvg() {
+  return `<svg class="mobile-services-caret h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>`;
+}
+
+/** Replace the full inner HTML of the first matching classed <div> (balanced tags). */
+function replaceDivInnerByClass(html, className, newInner) {
+  const re = new RegExp(
+    `<div\\b([^>]*\\bclass=["'][^"']*\\b${className}\\b[^"']*["'][^>]*)>`,
+    "i"
+  );
+  const m = String(html).match(re);
+  if (!m || m.index == null) return html;
+  const startTagEnd = m.index + m[0].length;
+  let depth = 1;
+  let i = startTagEnd;
+  const src = String(html);
+  while (i < src.length && depth > 0) {
+    const nextOpen = src.indexOf("<div", i);
+    const nextClose = src.indexOf("</div>", i);
+    if (nextClose < 0) break;
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      depth += 1;
+      i = nextOpen + 4;
+      continue;
+    }
+    depth -= 1;
+    if (depth === 0) {
+      return (
+        src.slice(0, startTagEnd) +
+        `\n          ${newInner}\n        ` +
+        src.slice(nextClose)
+      );
+    }
+    i = nextClose + 6;
+  }
+  return html;
+}
+
 function injectHeaderMenus(html, items) {
   const list = normalizeMenuItems(items);
   if (!list.length) return html;
@@ -480,18 +556,19 @@ function injectHeaderMenus(html, items) {
 
   const desktopParts = [];
   const mobileParts = [];
+  let mobileServicesBound = false;
 
   tops.forEach((item) => {
     const kids = childrenOf(list, item.id);
     const id = escapeHtml(item.id);
-    const href = escapeHtml(item.href);
     const label = escapeHtml(item.label);
 
     if (kids.length) {
       const childLinks = kids
         .map((k, idx) => {
           const n = String(idx + 1).padStart(2, "0");
-          return `<a class="nav-drop-item" data-cms-extra-menu="${escapeHtml(k.id)}" href="${escapeHtml(k.href)}"><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${escapeHtml(k.label)}</span><span class="nav-drop-arrow">→</span></a>`;
+          const a = anchorAttrs(k);
+          return `<a class="nav-drop-item" data-cms-extra-menu="${a.id}" href="${a.href}"${a.section}><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${a.label}</span><span class="nav-drop-arrow">&#8594;</span></a>`;
         })
         .join("\n                  ");
       desktopParts.push(`<li class="nav-drop relative" data-cms-extra-menu="${id}">
@@ -506,47 +583,64 @@ function injectHeaderMenus(html, items) {
         </li>`);
 
       const mobileChild = kids
-        .map(
-          (k) =>
-            `<a class="nav-drop-item mobile-link" data-cms-extra-menu="${escapeHtml(k.id)}" href="${escapeHtml(k.href)}"><span class="nav-drop-name">${escapeHtml(k.label)}</span></a>`
-        )
-        .join("\n");
+        .map((k) => {
+          const a = anchorAttrs(k);
+          return `<a class="nav-drop-item mobile-link" data-cms-extra-menu="${a.id}" href="${a.href}"${a.section}><span class="nav-drop-num">${String(kids.indexOf(k) + 1).padStart(2, "0")}</span><span class="nav-drop-name">${a.label}</span></a>`;
+        })
+        .join("\n                  ");
+      // Keep GitHub/site.js IDs on the first Services dropdown.
+      const isPrimaryServices =
+        !mobileServicesBound && /^services$/i.test(item.label);
+      if (isPrimaryServices) mobileServicesBound = true;
+      const btnId = isPrimaryServices
+        ? ` id="mobile-services-btn" aria-controls="mobile-services"`
+        : "";
+      const panelId = isPrimaryServices ? ` id="mobile-services"` : "";
       mobileParts.push(`<div class="mobile-menu-item" data-cms-extra-menu="${id}">
-            <button type="button" class="mobile-services-btn" aria-expanded="false">${label}</button>
-            <div class="mobile-services"><div class="mobile-services-clip"><div class="nav-drop-panel rounded-[1.35rem] p-1.5">${mobileChild}</div></div></div>
+            <button type="button"${btnId} class="mobile-services-btn" aria-expanded="false">${label}
+              ${mobileServicesCaretSvg()}
+            </button>
+            <div${panelId} class="mobile-services">
+              <div class="mobile-services-clip">
+                <div class="nav-drop-panel rounded-[1.35rem] p-1.5">
+                  ${mobileChild}
+                </div>
+              </div>
+            </div>
           </div>`);
     } else {
+      const a = anchorAttrs(item);
       desktopParts.push(
-        `<li data-cms-extra-menu="${id}"><a class="nav-link opacity-85" href="${href}">${label}</a></li>`
+        `<li data-cms-extra-menu="${a.id}"><a class="nav-link opacity-85" href="${a.href}"${a.section}>${a.label}</a></li>`
       );
+      const isContact = /^contact$/i.test(item.label);
       mobileParts.push(
-        `<a data-cms-extra-menu="${id}" href="${href}" class="mobile-link mobile-menu-item">${label}</a>`
+        `<a data-cms-extra-menu="${a.id}" href="${a.href}"${a.section} class="mobile-link mobile-menu-item${isContact ? " mobile-menu-cta" : ""}">${a.label}</a>`
       );
     }
   });
 
+  // When CMS primary has items, replace built-in desktop/mobile nav (avoid duplicates).
   if (desktopParts.length) {
     const desktopLis = desktopParts.join("\n        ");
     out = out.replace(
       /(<ul\b[^>]*(?:class=["'][^"']*items-center[^"']*["']|class=["'][^"']*nav[^"']*["'])[^>]*>)([\s\S]*?)(<\/ul>)/i,
       (full, open, inner, close) => {
-        if (!/nav-link/i.test(inner)) return full;
-        if (/data-cms-extra-menu=/i.test(inner)) return full;
-        return `${open}${inner}\n        ${desktopLis}\n      ${close}`;
+        if (!/nav-link|nav-drop/i.test(inner)) return full;
+        return `${open}\n        ${desktopLis}\n      ${close}`;
       }
     );
   }
 
   if (mobileParts.length) {
-    const mobileAs = mobileParts.join("\n          ");
-    if (/mobile-menu-cta/i.test(out)) {
-      out = out.replace(
-        /(<a\b[^>]*class=["'][^"']*mobile-menu-cta[^"']*["'][^>]*>)/i,
-        `${mobileAs}\n          $1`
-      );
-    }
+    out = replaceDivInnerByClass(
+      out,
+      "mobile-menu-nav",
+      mobileParts.join("\n          ")
+    );
   }
 
+  // Legacy: still allow extras under built-in Services when parentId is __services__
   if (serviceKids.length) {
     out = out.replace(
       /(<div class="nav-drop-panel\b[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/gi,
@@ -574,7 +668,7 @@ function injectHeaderMenus(html, items) {
             );
           } else {
             extras.push(
-              `<a class="nav-drop-item" data-cms-extra-menu="${id}" href="${href}"><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${label}</span><span class="nav-drop-arrow">→</span></a>`
+              `<a class="nav-drop-item" data-cms-extra-menu="${id}" href="${href}"><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${label}</span><span class="nav-drop-arrow">&#8594;</span></a>`
             );
           }
         }
@@ -589,50 +683,66 @@ function injectHeaderMenus(html, items) {
   return out;
 }
 
+function footerItemLi(item, kids) {
+  const a = anchorAttrs(item);
+  if (!kids.length) {
+    return `<li data-cms-extra-menu="${a.id}"><a href="${a.href}"${a.section}>${a.label}</a></li>`;
+  }
+  const nested = kids
+    .map((k) => {
+      const c = anchorAttrs(k);
+      return `<li data-cms-extra-menu="${c.id}"><a href="${c.href}"${c.section}>${c.label}</a></li>`;
+    })
+    .join("");
+  return `<li data-cms-extra-menu="${a.id}"><a href="${a.href}"${a.section}>${a.label}</a><ul>${nested}</ul></li>`;
+}
+
 function injectFooterMenus(html, items) {
   const list = normalizeMenuItems(items);
   const tops = childrenOf(list, null);
   if (!tops.length) return html;
 
-  const lis = tops
-    .map((item) => {
-      const kids = childrenOf(list, item.id);
-      const id = escapeHtml(item.id);
-      const href = escapeHtml(item.href);
-      const label = escapeHtml(item.label);
-      if (!kids.length) {
-        return `<li data-cms-extra-menu="${id}"><a href="${href}">${label}</a></li>`;
-      }
-      const nested = kids
-        .map(
-          (k) =>
-            `<li data-cms-extra-menu="${escapeHtml(k.id)}"><a href="${escapeHtml(k.href)}">${escapeHtml(k.label)}</a></li>`
-        )
-        .join("");
-      return `<li data-cms-extra-menu="${id}"><a href="${href}">${label}</a><ul>${nested}</ul></li>`;
-    })
-    .join("\n            ");
+  const servicesTop = tops.find(
+    (t) => /^services$/i.test(t.label) && childrenOf(list, t.id).length
+  );
+  const companyTops = tops.filter((t) => !servicesTop || t.id !== servicesTop.id);
 
   let out = html;
-  if (/footer-col-title[^>]*>\s*Company\s*</i.test(out)) {
+
+  if (servicesTop) {
+    const kids = childrenOf(list, servicesTop.id);
+    const lis = kids
+      .map((k) => {
+        const a = anchorAttrs(k);
+        return `<li data-cms-extra-menu="${a.id}"><a href="${a.href}"${a.section}>${a.label}</a></li>`;
+      })
+      .join("\n            ");
     out = out.replace(
-      /(<p\b[^>]*class=["'][^"']*footer-col-title[^"']*["'][^>]*>\s*Company\s*<\/p>\s*<ul\b[^>]*>)([\s\S]*?)(<\/ul>)/i,
-      (full, open, inner, close) => {
-        if (/data-cms-extra-menu/i.test(inner)) return full;
-        return `${open}${inner}\n            ${lis}\n          ${close}`;
-      }
+      /(<p\b[^>]*class=["'][^"']*footer-col-title[^"']*["'][^>]*>\s*Services\s*<\/p>\s*<ul\b[^>]*>)([\s\S]*?)(<\/ul>)/i,
+      (full, open) => `${open}\n            ${lis}\n          </ul>`
     );
-    return out;
   }
 
-  out = out.replace(
-    /(<footer\b[\s\S]*?<ul\b(?![^>]*footer-ownership)[^>]*>)([\s\S]*?)(<\/ul>)/i,
-    (full, open, inner, close) => {
-      if (/data-cms-extra-menu/i.test(inner)) return full;
-      if (/footer-ownership/i.test(open)) return full;
-      return `${open}${inner}\n            ${lis}\n          ${close}`;
+  if (companyTops.length) {
+    const lis = companyTops
+      .map((item) => footerItemLi(item, childrenOf(list, item.id)))
+      .join("\n            ");
+    if (/footer-col-title[^>]*>\s*Company\s*</i.test(out)) {
+      out = out.replace(
+        /(<p\b[^>]*class=["'][^"']*footer-col-title[^"']*["'][^>]*>\s*Company\s*<\/p>\s*<ul\b[^>]*>)([\s\S]*?)(<\/ul>)/i,
+        (full, open) => `${open}\n            ${lis}\n          </ul>`
+      );
+    } else {
+      out = out.replace(
+        /(<footer\b[\s\S]*?<ul\b(?![^>]*footer-ownership)[^>]*>)([\s\S]*?)(<\/ul>)/i,
+        (full, open, inner, close) => {
+          if (/footer-ownership/i.test(open)) return full;
+          return `${open}\n            ${lis}\n          ${close}`;
+        }
+      );
     }
-  );
+  }
+
   return out;
 }
 

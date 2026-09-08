@@ -1696,14 +1696,19 @@ main section h2.svc-section-title {
   html.js .hero-banner .hero-eyebrow,
   html.js .hero-banner .hero-title,
   html.js .hero-banner .hero-lead,
-  html.js .hero-banner .hero-actions,
-  html.js .hero-banner .hero-banner-img {
+  html.js .hero-banner .hero-actions {
     animation: hero-fade-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* Image fades in only after decode — avoids pop/jank while bytes still loading */
   html.js .hero-banner .hero-banner-img {
-    animation-delay: 0.08s;
-    animation-duration: 0.85s;
+    opacity: 0;
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: none;
+  }
+
+  html.js .hero-banner.is-media-ready .hero-banner-img {
+    opacity: 1;
   }
 
   html.js .hero-banner .hero-eyebrow {

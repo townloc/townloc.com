@@ -5,7 +5,7 @@
  * Site CMS: GET /api/cms , GET|PUT /api/admin/cms
  */
 
-import { CMS_DEFAULTS, CMS_FIELD_META, deepMerge } from "./cmsDefaults.js";
+import { CMS_DEFAULTS, CMS_FIELD_META, deepMerge, ensureSeededCustomMenus } from "./cmsDefaults.js";
 import {
   htmlPathFromUrl,
   extractEditables,
@@ -15,9 +15,13 @@ import {
 import {
   slugifyTitle,
   buildServicePageHtml,
-  injectCustomServiceNav,
-  injectCustomServiceCards,
 } from "./pageTemplate.js";
+import {
+  SECTION_TYPES,
+  defaultSectionsForNewPage,
+  compileServicePageFromSections,
+  normalizeSections,
+} from "./sectionBuilder.js";
 import {
   extractLayoutEditables,
   applyAllLayout,
@@ -53,6 +57,7 @@ const PAGE_ALLOWLIST = [
   "privacy.html",
   "terms.html",
   "industries/index.html",
+  "blog/index.html",
   "services/index.html",
   "services/google-business-profile-setup.html",
   "services/google-maps-review-management.html",
@@ -64,12 +69,206 @@ const PAGE_ALLOWLIST = [
 
 const PAGE_ALLOWLIST_SET = new Set(PAGE_ALLOWLIST);
 
+/** Slugs that must not become root CMS pages (collide with site routes/files). */
+const RESERVED_ROOT_SLUGS = new Set([
+  "admin",
+  "api",
+  "assets",
+  "blog",
+  "services",
+  "industries",
+  "privacy",
+  "terms",
+  "index",
+  "404",
+  "robots",
+  "sitemap",
+  "favicon",
+  "contact",
+  "css",
+  "js",
+  "images",
+  "static",
+  "www",
+]);
+
 function customPagesFromDoc(doc) {
   return Array.isArray(doc && doc.customPages) ? doc.customPages : [];
 }
 
+function isManagedCustomPage(path, doc) {
+  const p = String(path || "").replace(/^\/+/, "");
+  if (!p || !/\.html$/i.test(p) || PAGE_ALLOWLIST_SET.has(p)) return false;
+  return customPagesFromDoc(doc).some((x) => x && x.path === p);
+}
+
+function rewriteMenuHrefsForMovedPage(menusDoc, oldPath, newPath) {
+  const oldSlug = String(oldPath || "")
+    .replace(/^services\//i, "")
+    .replace(/\.html$/i, "");
+  const newSlug = String(newPath || "")
+    .replace(/^services\//i, "")
+    .replace(/\.html$/i, "");
+  if (!oldSlug || !newSlug) return menusDoc;
+
+  const oldHrefs = new Set([
+    `/${oldPath}`,
+    `/${oldPath}`.replace(/\.html$/i, ""),
+    `/services/${oldSlug}`,
+    `/services/${oldSlug}.html`,
+    oldPath,
+  ]);
+  const nextHref = `/${newSlug}`;
+
+  function walk(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map((it) => {
+      const href = String((it && (it.href || it.url)) || "");
+      const patched =
+        oldHrefs.has(href) || href === `/services/${oldSlug}`
+          ? nextHref
+          : href;
+      return {
+        ...it,
+        href: patched,
+        children: walk(it.children || it.items || []),
+      };
+    });
+  }
+
+  const menus = normalizeCustomMenusDoc(menusDoc);
+  if (Array.isArray(menus.menus)) {
+    menus.menus = menus.menus.map((m) => ({
+      ...m,
+      items: walk(m.items || []),
+    }));
+  }
+  return menus;
+}
+
+/** Move legacy custom pages services/{slug}.html → {slug}.html (public URL /{slug}). */
+async function migrateCustomPagesToRoot(env, doc) {
+  const customs = customPagesFromDoc(doc);
+  if (!customs.length) return doc;
+
+  let changed = false;
+  const nextCustom = [];
+  const pageSections = {
+    ...(doc.pageSections && typeof doc.pageSections === "object"
+      ? doc.pageSections
+      : {}),
+  };
+  const pageSeo = {
+    ...(doc.pageSeo && typeof doc.pageSeo === "object" ? doc.pageSeo : {}),
+  };
+  const autoPages = {
+    ...(doc.autoPages && typeof doc.autoPages === "object" ? doc.autoPages : {}),
+  };
+  let menus = customMenusFromDoc(doc);
+
+  for (const entry of customs) {
+    if (!entry || !entry.path) continue;
+    const oldPath = String(entry.path).replace(/^\/+/, "");
+    const m = oldPath.match(/^services\/([a-z0-9]+(?:-[a-z0-9]+)*)\.html$/i);
+    if (!m || PAGE_ALLOWLIST_SET.has(oldPath)) {
+      nextCustom.push(entry);
+      continue;
+    }
+    const slug = m[1].toLowerCase();
+    if (RESERVED_ROOT_SLUGS.has(slug)) {
+      nextCustom.push(entry);
+      continue;
+    }
+    const newPath = `${slug}.html`;
+    if (PAGE_ALLOWLIST_SET.has(newPath)) {
+      nextCustom.push(entry);
+      continue;
+    }
+
+    try {
+      const row = await env.DB.prepare(`SELECT html FROM pages WHERE path = ?`)
+        .bind(oldPath)
+        .first();
+      if (row && typeof row.html === "string" && row.html.length) {
+        let html = row.html;
+        html = html
+          .replace(
+            new RegExp(`https://townloc\\.com/services/${slug}(?:\\.html)?`, "gi"),
+            `https://townloc.com/${slug}`
+          )
+          .replace(
+            new RegExp(`data-cms-page="services/${slug}"`, "gi"),
+            `data-cms-page="${slug}"`
+          );
+        await env.DB.prepare(
+          `INSERT INTO pages (path, html, updated_at) VALUES (?, ?, datetime('now'))
+           ON CONFLICT(path) DO UPDATE SET html = excluded.html, updated_at = datetime('now')`
+        )
+          .bind(newPath, html)
+          .run();
+        await env.DB.prepare(`DELETE FROM pages WHERE path = ?`)
+          .bind(oldPath)
+          .run();
+      }
+    } catch (err) {
+      console.error("custom page migrate failed", oldPath, err);
+      nextCustom.push(entry);
+      continue;
+    }
+
+    if (pageSections[oldPath]) {
+      pageSections[newPath] = pageSections[oldPath];
+      delete pageSections[oldPath];
+    }
+    if (pageSeo[oldPath]) {
+      pageSeo[newPath] = pageSeo[oldPath];
+      delete pageSeo[oldPath];
+    }
+    if (autoPages[oldPath]) {
+      autoPages[newPath] = autoPages[oldPath];
+      delete autoPages[oldPath];
+    }
+    menus = rewriteMenuHrefsForMovedPage(menus, oldPath, newPath);
+    nextCustom.push({ ...entry, path: newPath });
+    changed = true;
+  }
+
+  if (!changed) return doc;
+
+  const merged = deepMerge(CMS_DEFAULTS, {
+    ...doc,
+    customPages: nextCustom,
+    pageSections,
+    pageSeo,
+    autoPages,
+    customMenus: menus,
+  });
+  merged.customPages = nextCustom;
+  merged.pageSections = pageSections;
+  merged.pageSeo = pageSeo;
+  merged.autoPages = autoPages;
+  merged.customMenus = menus;
+  if (doc.layout) merged.layout = doc.layout;
+  await writeCmsDocument(env, merged);
+  return merged;
+}
+
 function customMenusFromDoc(doc) {
   return normalizeCustomMenusDoc(doc && doc.customMenus);
+}
+
+async function loadMenusWithSeed(env) {
+  const current = await readCmsDocument(env);
+  const raw = customMenusFromDoc(current);
+  if (current.siteMenusSeeded) {
+    return { menus: raw, changed: false };
+  }
+  const { menus, changed } = ensureSeededCustomMenus(raw);
+  const normalized = normalizeCustomMenusDoc(menus);
+  const merged = persistCustomMenus(current, normalized);
+  merged.siteMenusSeeded = true;
+  await writeCmsDocument(env, merged);
+  return { menus: normalized, changed };
 }
 
 function newMenuId() {
@@ -215,6 +414,55 @@ function isValidUrl(value) {
   } catch (_) {
     return false;
   }
+}
+
+/** http(s) URL or site-relative /assets/… path */
+function isMediaUrl(value) {
+  const v = String(value || "").trim();
+  if (!v) return false;
+  if (v.startsWith("/assets/")) {
+    return !v.includes("..") && v.length <= 500;
+  }
+  return isValidUrl(v);
+}
+
+const loginAttemptsByIp = new Map();
+
+function clientIp(request) {
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const maxFails = 5;
+  let row = loginAttemptsByIp.get(ip);
+  if (!row || now > row.resetAt) {
+    row = { fails: 0, resetAt: now + windowMs };
+    loginAttemptsByIp.set(ip, row);
+  }
+  if (row.fails >= maxFails) {
+    const mins = Math.max(1, Math.ceil((row.resetAt - now) / 60000));
+    return {
+      ok: false,
+      message: `Too many failed logins. Try again in about ${mins} minute(s).`,
+    };
+  }
+  return { ok: true, row };
+}
+
+function recordLoginFailure(ip) {
+  const check = checkLoginRateLimit(ip);
+  if (!check.ok) return;
+  check.row.fails += 1;
+}
+
+function clearLoginFailures(ip) {
+  loginAttemptsByIp.delete(ip);
 }
 
 function escapeHtml(str) {
@@ -575,6 +823,12 @@ async function handleAdminLogin(request, env, origin) {
     );
   }
 
+  const ip = clientIp(request);
+  const limited = checkLoginRateLimit(ip);
+  if (!limited.ok) {
+    return json({ success: false, message: limited.message }, 429, origin);
+  }
+
   let body;
   try {
     body = await request.json();
@@ -584,9 +838,11 @@ async function handleAdminLogin(request, env, origin) {
 
   const password = typeof body.password === "string" ? body.password : "";
   if (!timingSafeEqual(password, env.ADMIN_PASSWORD)) {
+    recordLoginFailure(ip);
     return json({ success: false, message: "Invalid password." }, 401, origin);
   }
 
+  clearLoginFailures(ip);
   const token = await createAdminToken(env);
   return json({ success: true, token }, 200, origin);
 }
@@ -737,11 +993,17 @@ function parsePostFields(body) {
   );
   const og_image = clean(body.og_image || body.ogImage || "", 500);
 
-  if (featured_image && !isValidUrl(featured_image)) {
-    return { ok: false, message: "Featured image must be a full http(s) URL." };
+  if (featured_image && !isMediaUrl(featured_image)) {
+    return {
+      ok: false,
+      message: "Featured image must be an http(s) URL or /assets/… path.",
+    };
   }
-  if (og_image && !isValidUrl(og_image)) {
-    return { ok: false, message: "OG image must be a full http(s) URL." };
+  if (og_image && !isMediaUrl(og_image)) {
+    return {
+      ok: false,
+      message: "OG image must be an http(s) URL or /assets/… path.",
+    };
   }
 
   if (!title || !slug) {
@@ -999,9 +1261,19 @@ async function handleAdminPageCreate(request, env, origin) {
     );
   }
 
-  const path = `services/${slug}.html`;
+  const path = `${slug}.html`;
+  if (RESERVED_ROOT_SLUGS.has(slug)) {
+    return json(
+      {
+        success: false,
+        message: "That URL name is reserved. Choose a different page name.",
+      },
+      400,
+      origin
+    );
+  }
   const doc = await readCmsDocument(env);
-  if (isEditablePage(path, doc)) {
+  if (isEditablePage(path, doc) || isEditablePage(`services/${path}`, doc)) {
     return json(
       {
         success: false,
@@ -1015,7 +1287,12 @@ async function handleAdminPageCreate(request, env, origin) {
   const existing = await env.DB.prepare(`SELECT path FROM pages WHERE path = ?`)
     .bind(path)
     .first();
-  if (existing) {
+  const existingLegacy = await env.DB.prepare(
+    `SELECT path FROM pages WHERE path = ?`
+  )
+    .bind(`services/${path}`)
+    .first();
+  if (existing || existingLegacy) {
     return json(
       {
         success: false,
@@ -1040,12 +1317,19 @@ async function handleAdminPageCreate(request, env, origin) {
     );
   }
   const templateHtml = await tplRes.text();
-  const html = buildServicePageHtml(templateHtml, {
+  const sections = defaultSectionsForNewPage({
+    title,
+    description,
+    imageUrl,
+  });
+  const compiled = compileServicePageFromSections(templateHtml, {
     title,
     slug,
     description,
     imageUrl,
+    sections,
   });
+  const html = compiled.html;
   if (html.length > 2_000_000) {
     return json({ success: false, message: "HTML too large." }, 400, origin);
   }
@@ -1062,26 +1346,496 @@ async function handleAdminPageCreate(request, env, origin) {
     title,
     description,
     imageUrl,
+    builder: true,
     created_at: new Date().toISOString(),
   };
   const customPages = [...customPagesFromDoc(doc), entry];
-  const merged = deepMerge(CMS_DEFAULTS, { ...doc, customPages });
+  const pageSections = {
+    ...(doc.pageSections && typeof doc.pageSections === "object"
+      ? doc.pageSections
+      : {}),
+    [path]: sections,
+  };
+  const merged = deepMerge(CMS_DEFAULTS, { ...doc, customPages, pageSections });
   merged.customPages = customPages;
+  merged.pageSections = pageSections;
   if (doc.autoPages) merged.autoPages = doc.autoPages;
   if (doc.layout) merged.layout = doc.layout;
   if (doc.customMenus) merged.customMenus = doc.customMenus;
+  if (doc.pageSeo) merged.pageSeo = doc.pageSeo;
   await writeCmsDocument(env, merged);
 
   return json(
     {
       success: true,
       page: entry,
-      url: `/${path}`,
+      sections,
+      sectionTypes: SECTION_TYPES,
+      url: `/${slug}`,
       pages: editablePagePaths(merged),
+      builder: true,
     },
     201,
     origin
   );
+}
+
+async function handleAdminPageDelete(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+  const path = typeof body.path === "string" ? body.path.trim() : "";
+  const doc = await readCmsDocument(env);
+  if (!isManagedCustomPage(path, doc)) {
+    return json(
+      { success: false, message: "Only custom pages can be deleted." },
+      400,
+      origin
+    );
+  }
+  if (PAGE_ALLOWLIST_SET.has(path)) {
+    return json(
+      { success: false, message: "Built-in pages cannot be deleted." },
+      400,
+      origin
+    );
+  }
+
+  const customPages = customPagesFromDoc(doc).filter((p) => p && p.path !== path);
+  await env.DB.prepare(`DELETE FROM pages WHERE path = ?`).bind(path).run();
+
+  const menus = customMenusFromDoc(doc);
+  function stripMenuItems(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((it) => {
+        const href = String((it && (it.href || it.url)) || "");
+        const clean = "/" + path.replace(/\.html$/i, "");
+        return (
+          href !== path &&
+          href !== "/" + path &&
+          href !== clean &&
+          !href.endsWith("/" + path)
+        );
+      })
+      .map((it) => ({
+        ...it,
+        children: stripMenuItems(it.children || it.items || []),
+      }));
+  }
+  if (Array.isArray(menus.menus)) {
+    menus.menus = menus.menus.map((m) => ({
+      ...m,
+      items: stripMenuItems(m.items || []),
+    }));
+  }
+
+  const merged = deepMerge(CMS_DEFAULTS, {
+    ...doc,
+    customPages,
+    customMenus: menus,
+  });
+  merged.customPages = customPages;
+  merged.customMenus = menus;
+  if (doc.autoPages) {
+    merged.autoPages = { ...doc.autoPages };
+    delete merged.autoPages[path];
+  }
+  if (doc.pageSeo) {
+    merged.pageSeo = { ...doc.pageSeo };
+    delete merged.pageSeo[path];
+  }
+  if (doc.pageSections) {
+    merged.pageSections = { ...doc.pageSections };
+    delete merged.pageSections[path];
+  }
+  if (doc.layout) merged.layout = doc.layout;
+  await writeCmsDocument(env, merged);
+
+  return json(
+    { success: true, path, pages: editablePagePaths(merged) },
+    200,
+    origin
+  );
+}
+
+async function loadServiceTemplateHtml(env) {
+  if (!env.ASSETS) return null;
+  const tplRes = await env.ASSETS.fetch(
+    new Request("https://scan.local/services/local-seo.html")
+  );
+  if (!tplRes.ok) return null;
+  return tplRes.text();
+}
+
+async function handleAdminPageSectionsGet(env, origin, pagePath) {
+  const path = String(pagePath || "").replace(/^\/+/, "");
+  const doc = await readCmsDocument(env);
+  if (!isEditablePage(path, doc)) {
+    return json({ success: false, message: "Page not available." }, 400, origin);
+  }
+  const custom = customPagesFromDoc(doc).find((p) => p && p.path === path);
+  const stored =
+    doc.pageSections && typeof doc.pageSections === "object"
+      ? doc.pageSections[path]
+      : null;
+  const hasBuilder = Array.isArray(stored) || !!(custom && custom.builder);
+  return json(
+    {
+      success: true,
+      path,
+      builder: hasBuilder,
+      sections: Array.isArray(stored) ? normalizeSections(stored) : null,
+      sectionTypes: SECTION_TYPES,
+      page: custom || { path, title: path },
+    },
+    200,
+    origin
+  );
+}
+
+async function handleAdminPageSectionsPut(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+  const path = typeof body.path === "string" ? body.path.trim() : "";
+  const doc = await readCmsDocument(env);
+  if (!isManagedCustomPage(path, doc)) {
+    return json(
+      { success: false, message: "Only custom pages support the section builder." },
+      400,
+      origin
+    );
+  }
+  if (PAGE_ALLOWLIST_SET.has(path)) {
+    return json(
+      {
+        success: false,
+        message: "Built-in service pages use the field editor, not the section builder.",
+      },
+      400,
+      origin
+    );
+  }
+
+  const customPages = customPagesFromDoc(doc);
+  let entry = customPages.find((p) => p && p.path === path);
+  if (!entry) {
+    return json(
+      { success: false, message: "Create the page in Site CMS first." },
+      404,
+      origin
+    );
+  }
+
+  const title =
+    typeof body.title === "string" && body.title.trim()
+      ? body.title.trim().slice(0, 120)
+      : entry.title || path;
+  const description =
+    typeof body.description === "string"
+      ? body.description.trim().slice(0, 500)
+      : entry.description || "";
+  const imageUrl =
+    typeof body.imageUrl === "string"
+      ? body.imageUrl.trim().slice(0, 500)
+      : entry.imageUrl || "";
+
+  let sections;
+  if (body.init === true && !Array.isArray(body.sections)) {
+    sections = defaultSectionsForNewPage({ title, description, imageUrl });
+  } else {
+    sections = normalizeSections(body.sections);
+  }
+  if (!sections.length) {
+    return json(
+      { success: false, message: "Add at least one section." },
+      400,
+      origin
+    );
+  }
+
+  const templateHtml = await loadServiceTemplateHtml(env);
+  if (!templateHtml) {
+    return json({ success: false, message: "Could not load page shell." }, 500, origin);
+  }
+  const slug = path.replace(/^services\//i, "").replace(/\.html$/i, "");
+  const compiled = compileServicePageFromSections(templateHtml, {
+    title,
+    slug,
+    description,
+    imageUrl,
+    sections,
+  });
+  if (compiled.html.length > 2_000_000) {
+    return json({ success: false, message: "HTML too large." }, 400, origin);
+  }
+
+  await env.DB.prepare(
+    `INSERT INTO pages (path, html, updated_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(path) DO UPDATE SET html = excluded.html, updated_at = datetime('now')`
+  )
+    .bind(path, compiled.html)
+    .run();
+
+  entry = {
+    ...entry,
+    title,
+    description,
+    imageUrl,
+    builder: true,
+  };
+  const nextCustom = customPages.map((p) => (p && p.path === path ? entry : p));
+  const pageSections = {
+    ...(doc.pageSections && typeof doc.pageSections === "object"
+      ? doc.pageSections
+      : {}),
+    [path]: sections,
+  };
+  const merged = deepMerge(CMS_DEFAULTS, {
+    ...doc,
+    customPages: nextCustom,
+    pageSections,
+  });
+  merged.customPages = nextCustom;
+  merged.pageSections = pageSections;
+  if (doc.autoPages) merged.autoPages = doc.autoPages;
+  if (doc.layout) merged.layout = doc.layout;
+  if (doc.customMenus) merged.customMenus = doc.customMenus;
+  if (doc.pageSeo) merged.pageSeo = doc.pageSeo;
+  await writeCmsDocument(env, merged);
+
+  return json(
+    {
+      success: true,
+      path,
+      sections,
+      page: entry,
+      sectionTypes: SECTION_TYPES,
+    },
+    200,
+    origin
+  );
+}
+
+async function handleAdminMediaUpload(request, env, origin) {
+  if (!env.GITHUB_TOKEN || !env.GITHUB_REPO) {
+    return json(
+      {
+        success: false,
+        message:
+          "Image upload needs GITHUB_TOKEN and GITHUB_REPO (same as Publish).",
+      },
+      503,
+      origin
+    );
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+
+  const dataBase64 =
+    typeof body.dataBase64 === "string" ? body.dataBase64.replace(/\s/g, "") : "";
+  const contentType =
+    typeof body.contentType === "string"
+      ? body.contentType.trim().toLowerCase()
+      : "";
+  const filenameRaw =
+    typeof body.filename === "string" ? body.filename.trim() : "upload";
+
+  if (!dataBase64 || dataBase64.length < 32) {
+    return json({ success: false, message: "Missing image data." }, 400, origin);
+  }
+  // ~5.5MB base64 ≈ 4MB binary; allow up to ~7MB base64 for quality-first uploads
+  if (dataBase64.length > 7_500_000) {
+    return json({ success: false, message: "Image is too large." }, 400, origin);
+  }
+
+  const allowed = {
+    "image/webp": "webp",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+  };
+  const ext = allowed[contentType];
+  if (!ext) {
+    return json(
+      { success: false, message: "Use WebP, JPEG, or PNG." },
+      400,
+      origin
+    );
+  }
+
+  const now = new Date();
+  const yyyy = String(now.getUTCFullYear());
+  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const id =
+    Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  const safeName = slugify(filenameRaw.replace(/\.[^.]+$/, "")) || "image";
+  const repoPath = `assets/images/uploads/${yyyy}/${mm}/${safeName}-${id}.${ext}`;
+  const publicUrl = `/${repoPath}`;
+
+  const shaRes = await githubGetFileSha(env, repoPath);
+  if (!shaRes.ok) {
+    return json({ success: false, message: shaRes.message }, 502, origin);
+  }
+
+  const put = await githubPutFileRaw(
+    env,
+    repoPath,
+    dataBase64,
+    shaRes.sha,
+    `cms: upload ${repoPath}`
+  );
+  if (!put.ok) {
+    return json({ success: false, message: put.message }, 502, origin);
+  }
+
+  try {
+    await env.DB.prepare(
+      `INSERT INTO media (key, url, filename, content_type, size)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+      .bind(
+        repoPath,
+        publicUrl,
+        `${safeName}.${ext}`,
+        contentType,
+        Math.floor((dataBase64.length * 3) / 4)
+      )
+      .run();
+  } catch (err) {
+    console.error("media insert failed", err);
+  }
+
+  return json(
+    {
+      success: true,
+      url: publicUrl,
+      path: repoPath,
+      message:
+        "Uploaded to GitHub. Run deploy if the image 404s until assets sync.",
+    },
+    201,
+    origin
+  );
+}
+
+async function githubPutFileRaw(env, path, contentBase64, sha, message) {
+  const repo = env.GITHUB_REPO;
+  const branch = env.GITHUB_BRANCH || "main";
+  const token = env.GITHUB_TOKEN;
+
+  const payload = {
+    message: message || `cms: update ${path}`,
+    content: contentBase64,
+    branch,
+  };
+  if (sha) payload.sha = sha;
+
+  const url = `https://api.github.com/repos/${repo}/contents/${encodeURI(path)}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+      "User-Agent": "townloc-cms",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    return { ok: false, message: `GitHub write failed (${res.status}): ${text}` };
+  }
+  return { ok: true };
+}
+
+function applyPageSeo(html, seo) {
+  if (!seo || typeof seo !== "object") return html;
+  const title = typeof seo.title === "string" ? seo.title.trim() : "";
+  const description =
+    typeof seo.description === "string" ? seo.description.trim() : "";
+  const ogImage = typeof seo.ogImage === "string" ? seo.ogImage.trim() : "";
+  let out = html;
+
+  if (title) {
+    const safe = escapeHtml(title);
+    if (/<title\b[^>]*>[\s\S]*?<\/title>/i.test(out)) {
+      out = out.replace(/<title\b[^>]*>[\s\S]*?<\/title>/i, `<title>${safe}</title>`);
+    }
+    if (/property=["']og:title["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+property=["']og:title["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    }
+    if (/name=["']twitter:title["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+name=["']twitter:title["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    }
+  }
+
+  if (description) {
+    const safe = escapeHtml(description);
+    if (/name=["']description["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+name=["']description["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    } else {
+      out = out.replace(
+        /<\/title>/i,
+        `</title>\n  <meta name="description" content="${safe}" />`
+      );
+    }
+    if (/property=["']og:description["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+property=["']og:description["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    }
+    if (/name=["']twitter:description["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+name=["']twitter:description["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    }
+  }
+
+  if (ogImage && isMediaUrl(ogImage)) {
+    const abs = ogImage.startsWith("/")
+      ? `https://townloc.com${ogImage}`
+      : ogImage;
+    const safe = escapeHtml(abs);
+    if (/property=["']og:image["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+property=["']og:image["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    }
+    if (/name=["']twitter:image["']/i.test(out)) {
+      out = out.replace(
+        /(<meta\s+name=["']twitter:image["'][^>]*content=["'])([^"']*)(["'])/i,
+        `$1${safe}$3`
+      );
+    }
+  }
+
+  return out;
 }
 
 async function githubGetFileSha(env, path) {
@@ -1236,7 +1990,13 @@ async function readCmsDocument(env) {
   } catch {
     stored = {};
   }
-  return deepMerge(CMS_DEFAULTS, stored);
+  const merged = deepMerge(CMS_DEFAULTS, stored);
+  try {
+    return await migrateCustomPagesToRoot(env, merged);
+  } catch (err) {
+    console.error("custom page root migrate failed", err);
+    return merged;
+  }
 }
 
 async function handlePublicCms(env, origin) {
@@ -1281,11 +2041,20 @@ async function handleAdminCmsScan(env, origin, pagePath) {
       ? doc.autoPages[path]
       : {}) || {};
   const fields = mergeFieldValues(discovered, overrides);
+  const seo =
+    doc.pageSeo && typeof doc.pageSeo[path] === "object"
+      ? {
+          title: String(doc.pageSeo[path].title || ""),
+          description: String(doc.pageSeo[path].description || ""),
+          ogImage: String(doc.pageSeo[path].ogImage || ""),
+        }
+      : { title: "", description: "", ogImage: "" };
   return json(
     {
       success: true,
       path,
       fields,
+      seo,
       counts: {
         total: fields.length,
         images: fields.filter((f) => f.kind === "img").length,
@@ -1345,7 +2114,7 @@ async function handleAdminCmsPut(request, env, origin) {
     return json({ success: false, message: "Invalid JSON." }, 400, origin);
   }
 
-  // Auto page overrides: { path, values: { "img:0": "...", "text:1": "..." } }
+  // Auto page overrides: { path, values, seo? }
   if (body && body.autoPage && body.path) {
     const path = String(body.path).replace(/^\/+/, "");
     const current = await readCmsDocument(env);
@@ -1360,8 +2129,29 @@ async function handleAdminCmsPut(request, env, origin) {
         : {}),
       [path]: values,
     };
-    const merged = deepMerge(CMS_DEFAULTS, { ...current, autoPages });
+    const pageSeo = {
+      ...(current.pageSeo && typeof current.pageSeo === "object"
+        ? current.pageSeo
+        : {}),
+    };
+    if (body.seo && typeof body.seo === "object") {
+      const og = clean(body.seo.ogImage || body.seo.og_image || "", 500);
+      if (og && !isMediaUrl(og)) {
+        return json(
+          { success: false, message: "OG image must be http(s) or /assets/…" },
+          400,
+          origin
+        );
+      }
+      pageSeo[path] = {
+        title: clean(body.seo.title || "", 200),
+        description: clean(body.seo.description || "", 320),
+        ogImage: og,
+      };
+    }
+    const merged = deepMerge(CMS_DEFAULTS, { ...current, autoPages, pageSeo });
     merged.autoPages = autoPages;
+    merged.pageSeo = pageSeo;
     merged.customPages = customPagesFromDoc(current);
     if (current.layout) merged.layout = current.layout;
     if (current.customMenus) merged.customMenus = current.customMenus;
@@ -1768,10 +2558,12 @@ async function handleAdminMenuUpdate(request, env, origin) {
 async function serveAssetWithCms(request, env) {
   const url = new URL(request.url);
   const pagePath = htmlPathFromUrl(url.pathname);
+  // Extensionless paths are HTML routes (/services/foo), not static assets.
   const looksHtml =
     url.pathname.endsWith(".html") ||
     url.pathname === "/" ||
-    url.pathname.endsWith("/");
+    url.pathname.endsWith("/") ||
+    !/\.[a-z0-9]+$/i.test(url.pathname);
 
   let html = null;
   let status = 200;
@@ -1780,6 +2572,39 @@ async function serveAssetWithCms(request, env) {
   });
 
   if (looksHtml && env.DB) {
+    try {
+      // Moves legacy custom pages services/{slug}.html → {slug}.html
+      await readCmsDocument(env);
+    } catch (err) {
+      console.error("CMS migrate on serve failed", err);
+    }
+
+    // Old custom URLs under /services/{slug} → /{slug}
+    const legacySvc =
+      url.pathname.match(/^\/services\/([a-z0-9]+(?:-[a-z0-9]+)*)\.html$/i) ||
+      url.pathname.match(/^\/services\/([a-z0-9]+(?:-[a-z0-9]+)*)$/i);
+    if (legacySvc) {
+      const slug = legacySvc[1].toLowerCase();
+      const builtIn = `services/${slug}.html`;
+      if (!PAGE_ALLOWLIST_SET.has(builtIn)) {
+        try {
+          const moved = await env.DB.prepare(
+            `SELECT path FROM pages WHERE path = ?`
+          )
+            .bind(`${slug}.html`)
+            .first();
+          if (moved) {
+            return Response.redirect(
+              new URL(`/${slug}${url.search}`, url).toString(),
+              301
+            );
+          }
+        } catch (err) {
+          console.error("legacy custom redirect check failed", err);
+        }
+      }
+    }
+
     try {
       const row = await env.DB.prepare(`SELECT html FROM pages WHERE path = ?`)
         .bind(pagePath)
@@ -1790,6 +2615,16 @@ async function serveAssetWithCms(request, env) {
     } catch (err) {
       console.error("D1 page read failed", err);
     }
+  }
+
+  // Canonical clean URLs: /path.html → /path (same as static HTML assets).
+  if (
+    html != null &&
+    /\.html$/i.test(url.pathname) &&
+    !/\/index\.html$/i.test(url.pathname)
+  ) {
+    const clean = new URL(url.pathname.replace(/\.html$/i, "") + url.search, url);
+    return Response.redirect(clean.toString(), 301);
   }
 
   const res = await env.ASSETS.fetch(request);
@@ -1807,15 +2642,22 @@ async function serveAssetWithCms(request, env) {
 
   try {
     const doc = await readCmsDocument(env);
-    const customPages = customPagesFromDoc(doc);
     const overrides =
       doc.autoPages && doc.autoPages[pagePath] ? doc.autoPages[pagePath] : null;
-    if (overrides) html = applyEditables(html, overrides);
-    // Sitewide header/footer menus (auto) — before injecting custom services
+    const hasSections =
+      doc.pageSections &&
+      Array.isArray(doc.pageSections[pagePath]) &&
+      doc.pageSections[pagePath].length > 0;
+    // Section-builder pages are compiled HTML — don't re-apply field overrides
+    if (overrides && !hasSections) html = applyEditables(html, overrides);
+    // Sitewide header/footer menus (auto). New pages only appear in Services
+    // when nested under that parent in Menus — no auto-inject into nav/cards.
     html = applyAllLayout(html, doc.layout);
     html = injectCustomMenus(html, customMenusFromDoc(doc));
-    html = injectCustomServiceNav(html, customPages, pagePath);
-    html = injectCustomServiceCards(html, customPages, pagePath);
+
+    if (doc.pageSeo && doc.pageSeo[pagePath]) {
+      html = applyPageSeo(html, doc.pageSeo[pagePath]);
+    }
 
     if (doc.branding && doc.branding.faviconUrl) {
       const fav = String(doc.branding.faviconUrl).trim();
@@ -1829,6 +2671,12 @@ async function serveAssetWithCms(request, env) {
   } catch (err) {
     console.error("CMS apply failed", err);
   }
+
+  // Keep public meta URLs extensionless (stored HTML may still say *.html).
+  html = String(html).replace(
+    /(https:\/\/townloc\.com\/[^"'>\s]+?)\.html(?=["'\s>])/gi,
+    "$1"
+  );
 
   baseHeaders.set("cache-control", "no-store");
   baseHeaders.set("content-type", "text/html; charset=utf-8");
@@ -1862,8 +2710,19 @@ async function handleAdmin(request, env, origin, url) {
     return handleAdminCmsLayoutScan(env, origin, region);
   }
   if (path === "/api/admin/cms/menus" && request.method === "GET") {
-    const doc = await readCmsDocument(env);
-    return json({ success: true, menus: customMenusFromDoc(doc) }, 200, origin);
+    const { menus, changed } = await loadMenusWithSeed(env);
+    return json(
+      {
+        success: true,
+        menus,
+        seeded: changed,
+        message: changed
+          ? "Loaded your site header and footer into Primary and Footer menus."
+          : undefined,
+      },
+      200,
+      origin
+    );
   }
   if (path === "/api/admin/cms/menus" && request.method === "PUT") {
     return handleAdminMenuSave(request, env, origin);
@@ -1937,6 +2796,22 @@ async function handleAdmin(request, env, origin, url) {
   }
   if (path === "/api/admin/pages/create" && request.method === "POST") {
     return handleAdminPageCreate(request, env, origin);
+  }
+  if (path === "/api/admin/pages/delete" && request.method === "POST") {
+    return handleAdminPageDelete(request, env, origin);
+  }
+  if (path === "/api/admin/pages/sections" && request.method === "GET") {
+    return handleAdminPageSectionsGet(
+      env,
+      origin,
+      url.searchParams.get("path")
+    );
+  }
+  if (path === "/api/admin/pages/sections" && request.method === "PUT") {
+    return handleAdminPageSectionsPut(request, env, origin);
+  }
+  if (path === "/api/admin/media/upload" && request.method === "POST") {
+    return handleAdminMediaUpload(request, env, origin);
   }
   if (path === "/api/admin/pages/publish" && request.method === "POST") {
     return handleAdminPagePublish(request, env, origin);

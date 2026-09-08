@@ -13,11 +13,46 @@ export const CMS_DEFAULTS = {
     header: {},
     footer: {},
   },
-  /** WordPress-style menus: named menus + theme locations */
+  /** WordPress-style menus: named menus + theme locations (seeded to match live HTML) */
   customMenus: {
     menus: [
-      { id: "menu_primary", name: "Primary Menu", items: [] },
-      { id: "menu_footer", name: "Footer Menu", items: [] },
+      {
+        id: "menu_primary",
+        name: "Primary Menu",
+        items: [
+          { id: "m_services", label: "Services", href: "/services/", parentId: null, order: 0, type: "custom" },
+          { id: "m_svc_gbp", label: "Google Business Profile", href: "/services/google-business-profile-setup", parentId: "m_services", order: 1, type: "page" },
+          { id: "m_svc_reviews", label: "Google Reviews", href: "/services/google-maps-review-management", parentId: "m_services", order: 2, type: "page" },
+          { id: "m_svc_ads", label: "Google Ads", href: "/services/google-ads-campaigns", parentId: "m_services", order: 3, type: "page" },
+          { id: "m_svc_web", label: "Website Building", href: "/services/web-development", parentId: "m_services", order: 4, type: "page" },
+          { id: "m_svc_seo", label: "Local SEO", href: "/services/local-seo", parentId: "m_services", order: 5, type: "page" },
+          { id: "m_svc_neg", label: "Remove Negative Reviews", href: "/services/remove-negative-reviews", parentId: "m_services", order: 6, type: "page" },
+          { id: "m_industries", label: "Industries", href: "/industries/", parentId: null, order: 7, type: "page" },
+          { id: "m_work", label: "Work", href: "/#work", parentId: null, order: 8, type: "custom" },
+          { id: "m_trust", label: "Trust", href: "/#trust", parentId: null, order: 9, type: "custom" },
+          { id: "m_faq", label: "FAQ", href: "/#faq", parentId: null, order: 10, type: "custom" },
+          { id: "m_contact", label: "Contact", href: "/#contact", parentId: null, order: 11, type: "custom" },
+        ],
+      },
+      {
+        id: "menu_footer",
+        name: "Footer Menu",
+        items: [
+          { id: "mf_services", label: "Services", href: "/services/", parentId: null, order: 0, type: "custom" },
+          { id: "mf_svc_reviews", label: "Google Business Reviews", href: "/services/google-maps-review-management", parentId: "mf_services", order: 1, type: "page" },
+          { id: "mf_svc_gbp", label: "Google Business Profile", href: "/services/google-business-profile-setup", parentId: "mf_services", order: 2, type: "page" },
+          { id: "mf_svc_ads", label: "Google Ads Campaigns", href: "/services/google-ads-campaigns", parentId: "mf_services", order: 3, type: "page" },
+          { id: "mf_svc_web", label: "Web Design & Development", href: "/services/web-development", parentId: "mf_services", order: 4, type: "page" },
+          { id: "mf_svc_seo", label: "Local SEO", href: "/services/local-seo", parentId: "mf_services", order: 5, type: "page" },
+          { id: "mf_svc_neg", label: "Remove Negative Reviews", href: "/services/remove-negative-reviews", parentId: "mf_services", order: 6, type: "page" },
+          { id: "mf_work", label: "Work", href: "/#work", parentId: null, order: 7, type: "custom" },
+          { id: "mf_blog", label: "Blog", href: "/blog/", parentId: null, order: 8, type: "page" },
+          { id: "mf_faq", label: "FAQ", href: "/#faq", parentId: null, order: 9, type: "custom" },
+          { id: "mf_about", label: "About", href: "/#trust", parentId: null, order: 10, type: "custom" },
+          { id: "mf_privacy", label: "Privacy Policy", href: "/privacy", parentId: null, order: 11, type: "page" },
+          { id: "mf_terms", label: "Terms of Service", href: "/terms", parentId: null, order: 12, type: "page" },
+        ],
+      },
     ],
     locations: {
       primary: "menu_primary",
@@ -423,4 +458,77 @@ export function deepMerge(base, patch) {
     }
   }
   return out;
+}
+
+/**
+ * If Primary/Footer menus exist but have zero items (common after first CMS create),
+ * copy the built-in site nav seed so admin shows the live header/footer structure.
+ */
+export function ensureSeededCustomMenus(rawMenus) {
+  const m = rawMenus && typeof rawMenus === "object" ? rawMenus : {};
+  const seedRoot = CMS_DEFAULTS.customMenus || {};
+  const seedMenus = Array.isArray(seedRoot.menus) ? seedRoot.menus : [];
+  const seedById = {};
+  seedMenus.forEach((menu) => {
+    if (menu && menu.id) seedById[menu.id] = menu;
+  });
+
+  const menus = Array.isArray(m.menus)
+    ? m.menus.map((menu) => ({ ...menu, items: Array.isArray(menu.items) ? menu.items.slice() : [] }))
+    : [];
+  const locations = {
+    primary: (m.locations && m.locations.primary) || seedRoot.locations.primary,
+    footer: (m.locations && m.locations.footer) || seedRoot.locations.footer,
+  };
+
+  let changed = false;
+
+  function seedFor(menu) {
+    if (!menu || (menu.items && menu.items.length)) return null;
+    if (seedById[menu.id] && seedById[menu.id].items && seedById[menu.id].items.length) {
+      return seedById[menu.id].items;
+    }
+    if (locations.primary === menu.id && seedById.menu_primary) {
+      return seedById.menu_primary.items;
+    }
+    if (locations.footer === menu.id && seedById.menu_footer) {
+      return seedById.menu_footer.items;
+    }
+    if (/primary/i.test(String(menu.name || "")) && seedById.menu_primary) {
+      return seedById.menu_primary.items;
+    }
+    if (/footer/i.test(String(menu.name || "")) && seedById.menu_footer) {
+      return seedById.menu_footer.items;
+    }
+    return null;
+  }
+
+  menus.forEach((menu) => {
+    const items = seedFor(menu);
+    if (!items || !items.length) return;
+    menu.items = items.map((it) => ({ ...it }));
+    changed = true;
+  });
+
+  // Ensure both location menus exist
+  if (!menus.some((x) => x.id === "menu_primary") && seedById.menu_primary) {
+    menus.unshift({
+      id: "menu_primary",
+      name: "Primary Menu",
+      items: seedById.menu_primary.items.map((it) => ({ ...it })),
+    });
+    if (!locations.primary) locations.primary = "menu_primary";
+    changed = true;
+  }
+  if (!menus.some((x) => x.id === "menu_footer") && seedById.menu_footer) {
+    menus.push({
+      id: "menu_footer",
+      name: "Footer Menu",
+      items: seedById.menu_footer.items.map((it) => ({ ...it })),
+    });
+    if (!locations.footer) locations.footer = "menu_footer";
+    changed = true;
+  }
+
+  return { menus: { menus, locations }, changed };
 }
