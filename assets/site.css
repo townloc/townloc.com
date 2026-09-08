@@ -1157,6 +1157,47 @@ figure picture img,
   width: 100%;
 }
 
+/* Soft zoom on content photos — same feel as homepage */
+main figure,
+.who-card,
+.home-figure-zoom {
+  overflow: hidden;
+}
+main figure img,
+main figure picture img,
+.who-card img,
+.who-card picture img,
+.home-figure-zoom img,
+.demo-panel img,
+.portfolio-shot img {
+  transition: transform 0.5s ease;
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+main figure:hover img,
+main figure:hover picture img,
+.who-card:hover img,
+.who-card:hover picture img,
+.home-figure-zoom:hover img,
+.demo-panel:hover img,
+.portfolio-shot:hover img {
+  transform: translate3d(0, 0, 0) scale(1.05);
+}
+@media (prefers-reduced-motion: reduce) {
+  main figure img,
+  main figure picture img,
+  .who-card img,
+  .who-card picture img,
+  .home-figure-zoom img,
+  .demo-panel img,
+  .portfolio-shot img {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 /* Alternating bands: first content section = white, then #f7f7f7, then white...
    Homepage: skips .hero-banner. Service pages: first section is white. */
 main > section:nth-child(odd of section:not(.hero-banner):not(.bg-ink)) {
