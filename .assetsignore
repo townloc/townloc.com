@@ -3,11 +3,9 @@
 **/node_modules
 **/.wrangler
 backend
-scripts
 *.log
 .DS_Store
 Thumbs.db
 .vscode
 .idea
-package-lock.json
 README.md

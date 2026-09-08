@@ -3,7 +3,7 @@ export const CMS_DEFAULTS = {
   branding: {
     name: "Townloc",
     mark: "N",
-    logoUrl: "",
+    logoUrl: "/assets/images/townloc-logo.png",
     faviconUrl: "/assets/images/townloc-favicon.png",
   },
   header: {},
@@ -13,10 +13,16 @@ export const CMS_DEFAULTS = {
     header: {},
     footer: {},
   },
-  /** Extra navbar/footer links: { header: [{id,label,href}], footer: [...] } */
+  /** WordPress-style menus: named menus + theme locations */
   customMenus: {
-    header: [],
-    footer: [],
+    menus: [
+      { id: "menu_primary", name: "Primary Menu", items: [] },
+      { id: "menu_footer", name: "Footer Menu", items: [] },
+    ],
+    locations: {
+      primary: "menu_primary",
+      footer: "menu_footer",
+    },
   },
   autoPages: {},
   /** User-created service pages: [{ path, title, description?, imageUrl?, created_at }] */

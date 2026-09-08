@@ -20,7 +20,21 @@
     "post-editor": "Post editor",
     pages: "Advanced",
     "site-cms": "Site CMS",
+    menus: "Menus",
     settings: "Settings",
+  };
+
+  var menuUi = {
+    view: "edit",
+    editLocation: "primary",
+    doc: { menus: [], locations: { primary: null, footer: null } },
+    activeMenuId: null,
+    draftName: "",
+    draft: [],
+    pages: [],
+    customPages: [],
+    posts: [],
+    dirty: false,
   };
 
   var cmsState = {
@@ -34,6 +48,7 @@
     layoutRegion: null,
     layoutFields: [],
     layoutValues: {},
+    layoutMenus: [],
   };
 
   function $(id) {
@@ -103,6 +118,11 @@
     if (name === "site-cms") {
       loadCms().catch(function (ex) {
         toast(ex.message || "Unable to load Site CMS.", false);
+      });
+    }
+    if (name === "menus") {
+      loadMenusPanel().catch(function (ex) {
+        toast(ex.message || "Unable to load Menus.", false);
       });
     }
   }
@@ -697,6 +717,847 @@
     });
   }
 
+  function newMenuLocalId() {
+    return (
+      "m_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random().toString(36).slice(2, 8)
+    );
+  }
+
+  function activeMenu() {
+    var id = menuUi.activeMenuId;
+    return (menuUi.doc.menus || []).find(function (m) {
+      return m.id === id;
+    });
+  }
+
+  function menuPageTitle(path) {
+    var titleByPath = {};
+    (menuUi.customPages || []).forEach(function (p) {
+      if (p && p.path) titleByPath[p.path] = p.title || p.path;
+    });
+    if (path === "index.html") return "Home";
+    if (path === "privacy.html") return "Privacy";
+    if (path === "terms.html") return "Terms";
+    if (path === "industries/index.html") return "Industries";
+    if (path === "services/index.html") return "Services overview";
+    if (path === "blog/index.html") return "Blog";
+    if (path.indexOf("services/") === 0) {
+      return (
+        titleByPath[path] ||
+        path
+          .replace(/^services\//, "")
+          .replace(/\.html$/i, "")
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, function (c) {
+            return c.toUpperCase();
+          })
+      );
+    }
+    return (
+      titleByPath[path] ||
+      path
+        .replace(/\.html$/i, "")
+        .replace(/\//g, " / ")
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, function (c) {
+          return c.toUpperCase();
+        })
+    );
+  }
+
+  function normalizeMenuDraft(items) {
+    return (Array.isArray(items) ? items : [])
+      .map(function (item, index) {
+        if (!item) return null;
+        var parentId =
+          item.parentId == null || item.parentId === ""
+            ? null
+            : String(item.parentId);
+        if (!parentId && item.placement === "services") parentId = "__services__";
+        return {
+          id: String(item.id || newMenuLocalId()),
+          label: String(item.label || "Link").trim() || "Link",
+          href: String(item.href || "#").trim() || "#",
+          parentId: parentId,
+          order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+          type: item.type || "custom",
+        };
+      })
+      .filter(Boolean)
+      .sort(function (a, b) {
+        return a.order - b.order;
+      });
+  }
+
+  function menuChildren(parentId) {
+    var pid = parentId == null ? null : String(parentId);
+    return menuUi.draft.filter(function (i) {
+      return (i.parentId == null ? null : String(i.parentId)) === pid;
+    });
+  }
+
+  function menuIsPrimaryAssigned() {
+    return menuUi.editLocation === "primary";
+  }
+
+  function syncLocationHint() {
+    var hint = $("menus-location-hint");
+    if (!hint) return;
+    hint.textContent =
+      menuUi.editLocation === "footer"
+        ? "Editing Footer menu — these links appear in the site footer."
+        : "Editing Primary (Navbar) menu — these links appear in the header.";
+  }
+
+  function syncLocTabs() {
+    document.querySelectorAll("[data-edit-loc]").forEach(function (btn) {
+      btn.classList.toggle(
+        "active",
+        btn.getAttribute("data-edit-loc") === menuUi.editLocation
+      );
+    });
+    var sel = $("menus-select");
+    if (sel) sel.value = menuUi.editLocation;
+  }
+
+  function resolveMenuForLocation(loc) {
+    var key = loc === "footer" ? "footer" : "primary";
+    if (!menuUi.doc.locations) {
+      menuUi.doc.locations = { primary: null, footer: null };
+    }
+    if (!Array.isArray(menuUi.doc.menus)) menuUi.doc.menus = [];
+
+    var locs = menuUi.doc.locations;
+    var menus = menuUi.doc.menus;
+    var fallbackId = key === "footer" ? "menu_footer" : "menu_primary";
+    var defaultName = key === "footer" ? "Footer Menu" : "Primary Menu";
+
+    // Never let primary + footer share one menu object
+    if (locs.primary && locs.footer && locs.primary === locs.footer) {
+      if (key === "footer") locs.footer = null;
+      else locs.primary = null;
+    }
+
+    var id = locs[key];
+    var menu = menus.find(function (m) {
+      return m && m.id === id;
+    });
+    if (menu) return menu;
+
+    menu = menus.find(function (m) {
+      return m && m.id === fallbackId;
+    });
+    if (menu) {
+      var otherKey = key === "footer" ? "primary" : "footer";
+      if (locs[otherKey] === menu.id) {
+        // fallback already used by other location — make a dedicated copy shell
+        menu = {
+          id: fallbackId + "_loc",
+          name: defaultName,
+          items: [],
+        };
+        menus.push(menu);
+      }
+      locs[key] = menu.id;
+      return menu;
+    }
+
+    var otherKey2 = key === "footer" ? "primary" : "footer";
+    var otherId = locs[otherKey2];
+    menu = menus.find(function (m) {
+      return m && m.id !== otherId;
+    });
+    if (menu && menu.id !== otherId) {
+      locs[key] = menu.id;
+      return menu;
+    }
+
+    var created = {
+      id: fallbackId,
+      name: defaultName,
+      items: [],
+    };
+    menus.push(created);
+    locs[key] = created.id;
+    return created;
+  }
+
+  function menuFlatTree() {
+    var rows = [];
+    menuChildren(null).forEach(function (top) {
+      rows.push({ item: top, depth: 0 });
+      menuChildren(top.id).forEach(function (child) {
+        rows.push({ item: child, depth: 1 });
+      });
+    });
+    if (menuIsPrimaryAssigned()) {
+      menuChildren("__services__").forEach(function (child) {
+        rows.push({ item: child, depth: 1, underServices: true });
+      });
+    }
+    return rows;
+  }
+
+  function markMenusDirty() {
+    menuUi.dirty = true;
+    var st = $("menus-save-status");
+    if (st) st.textContent = "Unsaved changes";
+  }
+
+  function setMenusView() {
+    /* locations tab removed — kept as no-op for safety */
+  }
+
+  function fillMenusSelect() {
+    syncLocTabs();
+  }
+
+  function fillLocationSelects() {
+    /* Manage Locations UI removed */
+  }
+
+  function loadActiveMenuDraft() {
+    var menu = resolveMenuForLocation(menuUi.editLocation);
+    menuUi.activeMenuId = menu ? menu.id : null;
+    menuUi.draftName = menu ? menu.name : "";
+    menuUi.draft = normalizeMenuDraft(menu ? menu.items : []);
+    if (menuUi.editLocation === "footer") {
+      menuUi.draft.forEach(function (item) {
+        if (item.parentId === "__services__") item.parentId = null;
+      });
+    }
+    menuUi.dirty = false;
+    var nameEl = $("menus-name");
+    if (nameEl) nameEl.value = menuUi.draftName || (menuUi.editLocation === "footer" ? "Footer Menu" : "Primary Menu");
+    var st = $("menus-save-status");
+    if (st) st.textContent = "";
+    syncLocationHint();
+    syncLocTabs();
+    renderMenusStructure();
+  }
+
+  function collectStructureEdits() {
+    var wrap = $("menus-structure");
+    if (!wrap) return;
+    var nameEl = $("menus-name");
+    if (nameEl) menuUi.draftName = nameEl.value.trim() || menuUi.draftName;
+    wrap.querySelectorAll("[data-menu-id]").forEach(function (row) {
+      var id = row.getAttribute("data-menu-id");
+      var item = menuUi.draft.find(function (m) {
+        return m.id === id;
+      });
+      if (!item) return;
+      var labelEl = row.querySelector('[data-menu-field="label"]');
+      var hrefEl = row.querySelector('[data-menu-field="href"]');
+      if (labelEl) item.label = labelEl.value.trim() || item.label;
+      if (hrefEl) item.href = hrefEl.value.trim() || item.href;
+    });
+  }
+
+  function renderMenusPagesList() {
+    var list = $("menus-pages-list");
+    if (!list) return;
+    list.innerHTML = "";
+    (menuUi.pages || []).forEach(function (path) {
+      var href = "/" + String(path).replace(/^\/+/, "");
+      var title = menuPageTitle(path);
+      var row = document.createElement("div");
+      row.className = "wp-check wp-check-row";
+      row.innerHTML =
+        '<label class="wp-check-label">' +
+        '<input type="checkbox" data-menu-page-href="' +
+        Admin.esc(href) +
+        '" data-menu-page-label="' +
+        Admin.esc(title) +
+        '" />' +
+        "<span>" +
+        Admin.esc(title) +
+        "</span></label>" +
+        '<button type="button" class="btn btn-secondary btn-sm wp-add-one" data-menu-page-href="' +
+        Admin.esc(href) +
+        '" data-menu-page-label="' +
+        Admin.esc(title) +
+        '" data-menu-item-type="page">Add</button>';
+      list.appendChild(row);
+    });
+    if (!(menuUi.pages || []).length) {
+      list.innerHTML = '<p class="hint" style="margin:0">No pages found.</p>';
+    }
+  }
+
+  function renderMenusPostsList() {
+    var list = $("menus-posts-list");
+    if (!list) return;
+    list.innerHTML = "";
+    var posts = (menuUi.posts || []).filter(function (p) {
+      return p && (p.status === "published" || !p.status);
+    });
+    posts.forEach(function (post) {
+      var slug = post.slug || post.id;
+      var href = "/blog/post.html?slug=" + encodeURIComponent(String(slug));
+      if (post.url) href = post.url;
+      var title = post.title || slug || "Post";
+      var row = document.createElement("div");
+      row.className = "wp-check wp-check-row";
+      row.innerHTML =
+        '<label class="wp-check-label">' +
+        '<input type="checkbox" data-menu-page-href="' +
+        Admin.esc(href) +
+        '" data-menu-page-label="' +
+        Admin.esc(title) +
+        '" data-menu-item-type="post" />' +
+        "<span>" +
+        Admin.esc(title) +
+        "</span></label>" +
+        '<button type="button" class="btn btn-secondary btn-sm wp-add-one" data-menu-page-href="' +
+        Admin.esc(href) +
+        '" data-menu-page-label="' +
+        Admin.esc(title) +
+        '" data-menu-item-type="post">Add</button>';
+      list.appendChild(row);
+    });
+    if (!posts.length) {
+      list.innerHTML = '<p class="hint" style="margin:0">No published posts yet.</p>';
+    }
+  }
+
+  function typeLabelFor(item, row) {
+    if (row.underServices) return "Services sub item";
+    if (row.depth) return "sub item";
+    if (item.type === "page") return "Page";
+    if (item.type === "post") return "Post";
+    return "Custom Link";
+  }
+
+  function previousTopLevel(item) {
+    var tops = menuChildren(null);
+    var idx = tops.findIndex(function (t) {
+      return t.id === item.id;
+    });
+    if (idx > 0) return tops[idx - 1];
+    // if item is already a child, previous top is its current parent (for outdent sibling logic)
+    if (item.parentId && item.parentId !== "__services__") {
+      return menuUi.draft.find(function (m) {
+        return m.id === item.parentId;
+      });
+    }
+    return null;
+  }
+
+  function renderMenusStructure() {
+    var wrap = $("menus-structure");
+    var empty = $("menus-structure-empty");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    var rows = menuFlatTree();
+    if (empty) {
+      if (rows.length) empty.setAttribute("hidden", "");
+      else empty.removeAttribute("hidden");
+    }
+    if (!rows.length) return;
+
+    rows.forEach(function (row) {
+      var item = row.item;
+      var bar = document.createElement("div");
+      bar.className =
+        "wp-structure-item" +
+        (row.depth ? " is-sub" : "") +
+        (row.underServices ? " is-services" : "");
+      bar.setAttribute("data-menu-id", item.id);
+      var tLabel = typeLabelFor(item, row);
+      bar.innerHTML =
+        '<div class="wp-structure-bar">' +
+        '<div class="wp-structure-left">' +
+        '<span class="wp-structure-label">' +
+        Admin.esc(item.label) +
+        "</span>" +
+        (row.depth
+          ? '<span class="wp-structure-subtag">sub item</span>'
+          : "") +
+        "</div>" +
+        '<span class="wp-structure-type">' +
+        Admin.esc(tLabel) +
+        ' <span class="wp-structure-caret">▾</span></span>' +
+        "</div>" +
+        '<div class="wp-structure-edit">' +
+        '<label class="field-label">Navigation Label</label>' +
+        '<input type="text" data-menu-field="label" maxlength="80" value="' +
+        Admin.esc(item.label) +
+        '" />' +
+        '<label class="field-label">URL</label>' +
+        '<input type="text" data-menu-field="href" maxlength="500" value="' +
+        Admin.esc(item.href) +
+        '" />' +
+        '<div class="wp-structure-actions">' +
+        '<button type="button" class="btn btn-secondary btn-sm" data-menu-move="up" title="Move up">↑</button>' +
+        '<button type="button" class="btn btn-secondary btn-sm" data-menu-move="down" title="Move down">↓</button>' +
+        '<button type="button" class="btn btn-secondary btn-sm" data-menu-indent="out" title="Outdent">←</button>' +
+        '<button type="button" class="btn btn-secondary btn-sm" data-menu-indent="in" title="Make sub item">→</button>' +
+        (menuIsPrimaryAssigned()
+          ? '<button type="button" class="btn btn-secondary btn-sm" data-menu-services="' +
+            Admin.esc(item.id) +
+            '">Under Services</button>'
+          : "") +
+        '<button type="button" class="btn btn-danger btn-sm" data-menu-remove="' +
+        Admin.esc(item.id) +
+        '">Remove</button>' +
+        "</div></div>";
+      wrap.appendChild(bar);
+
+      var barHead = bar.querySelector(".wp-structure-bar");
+      if (barHead) {
+        barHead.addEventListener("click", function () {
+          bar.classList.toggle("open");
+        });
+      }
+      var edit = bar.querySelector(".wp-structure-edit");
+      if (edit) {
+        edit.addEventListener("click", function (e) {
+          e.stopPropagation();
+        });
+      }
+    });
+
+    wrap.querySelectorAll("[data-menu-field]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        collectStructureEdits();
+        markMenusDirty();
+        if (el.getAttribute("data-menu-field") === "label") {
+          var rowEl = el.closest("[data-menu-id]");
+          var lab = rowEl && rowEl.querySelector(".wp-structure-label");
+          if (lab) lab.textContent = el.value.trim() || "Link";
+        }
+      });
+      el.addEventListener("input", markMenusDirty);
+    });
+    wrap.querySelectorAll("[data-menu-remove]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        menusRemoveDraftItem(btn.getAttribute("data-menu-remove"));
+      });
+    });
+    wrap.querySelectorAll("[data-menu-move]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var row = btn.closest("[data-menu-id]");
+        menusMoveDraftItem(
+          row && row.getAttribute("data-menu-id"),
+          btn.getAttribute("data-menu-move")
+        );
+      });
+    });
+    wrap.querySelectorAll("[data-menu-indent]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var row = btn.closest("[data-menu-id]");
+        menusIndentItem(
+          row && row.getAttribute("data-menu-id"),
+          btn.getAttribute("data-menu-indent")
+        );
+      });
+    });
+    wrap.querySelectorAll("[data-menu-services]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        menusPutUnderServices(btn.getAttribute("data-menu-services"));
+      });
+    });
+  }
+
+  function menusRemoveDraftItem(id) {
+    collectStructureEdits();
+    menuUi.draft = menuUi.draft.filter(function (m) {
+      return m.id !== id;
+    });
+    menuUi.draft.forEach(function (m) {
+      if (m.parentId === id) m.parentId = null;
+    });
+    markMenusDirty();
+    renderMenusStructure();
+  }
+
+  function menusMoveDraftItem(id, dir) {
+    collectStructureEdits();
+    var item = menuUi.draft.find(function (m) {
+      return m.id === id;
+    });
+    if (!item) return;
+    var siblings = menuUi.draft.filter(function (m) {
+      return (m.parentId || null) === (item.parentId || null);
+    });
+    var idx = siblings.findIndex(function (m) {
+      return m.id === id;
+    });
+    var swapWith = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || swapWith < 0 || swapWith >= siblings.length) return;
+    var a = siblings[idx];
+    var b = siblings[swapWith];
+    var orderA = a.order;
+    a.order = b.order;
+    b.order = orderA;
+    menuUi.draft.sort(function (x, y) {
+      return x.order - y.order;
+    });
+    markMenusDirty();
+    renderMenusStructure();
+  }
+
+  function menusIndentItem(id, dir) {
+    collectStructureEdits();
+    var item = menuUi.draft.find(function (m) {
+      return m.id === id;
+    });
+    if (!item) return;
+    if (dir === "in") {
+      // Make sub item of previous top-level sibling (WordPress indent)
+      if (item.parentId) return;
+      var tops = menuChildren(null);
+      var idx = tops.findIndex(function (t) {
+        return t.id === id;
+      });
+      if (idx <= 0) {
+        toast("Move under another top-level item first (need a previous item).", false);
+        return;
+      }
+      // Don't allow indent if this item has children
+      if (menuChildren(item.id).length) {
+        toast("Outdent children first — only one nesting level.", false);
+        return;
+      }
+      item.parentId = tops[idx - 1].id;
+    } else {
+      item.parentId = null;
+    }
+    markMenusDirty();
+    renderMenusStructure();
+  }
+
+  function menusPutUnderServices(id) {
+    collectStructureEdits();
+    var item = menuUi.draft.find(function (m) {
+      return m.id === id;
+    });
+    if (!item) return;
+    if (menuChildren(item.id).length) {
+      toast("Remove sub items first.", false);
+      return;
+    }
+    item.parentId = "__services__";
+    markMenusDirty();
+    renderMenusStructure();
+  }
+
+  function menusAddDraftItem(label, href, type) {
+    if (!Array.isArray(menuUi.draft)) menuUi.draft = [];
+    collectStructureEdits();
+    menuUi.draft.push({
+      id: newMenuLocalId(),
+      label: String(label || "Link").trim() || "Link",
+      href: String(href || "#").trim() || "#",
+      parentId: null,
+      order: menuUi.draft.length,
+      type: type || "custom",
+    });
+    if (!menuUi.activeMenuId) {
+      var menu = resolveMenuForLocation(menuUi.editLocation);
+      menuUi.activeMenuId = menu ? menu.id : null;
+    }
+    markMenusDirty();
+    renderMenusStructure();
+    var wrap = $("menus-structure");
+    if (wrap && wrap.lastElementChild) {
+      wrap.lastElementChild.classList.add("open");
+      wrap.lastElementChild.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  function menusAddFromChecklist(listId) {
+    var list = $(listId);
+    if (!list) return;
+    var checked = list.querySelectorAll("input[type=checkbox]:checked");
+    if (!checked.length) {
+      toast("Tick one or more pages, or click Add beside a page.", false);
+      return;
+    }
+    checked.forEach(function (cb) {
+      menusAddDraftItem(
+        cb.getAttribute("data-menu-page-label") || "Link",
+        cb.getAttribute("data-menu-page-href") || "/",
+        cb.getAttribute("data-menu-item-type") || "page"
+      );
+      cb.checked = false;
+    });
+    toast("Added to menu. Click Save Menu when ready.", true);
+  }
+
+  function menusAddOneFromButton(btn) {
+    if (!btn) return;
+    menusAddDraftItem(
+      btn.getAttribute("data-menu-page-label") || "Link",
+      btn.getAttribute("data-menu-page-href") || "/",
+      btn.getAttribute("data-menu-item-type") || "page"
+    );
+    toast("Added to menu. Click Save Menu when ready.", true);
+  }
+
+  function menusAddCustomLink() {
+    var hrefEl = $("menus-custom-href");
+    var labelEl = $("menus-custom-label");
+    var href = hrefEl ? hrefEl.value.trim() : "";
+    var label = labelEl ? labelEl.value.trim() : "";
+    if (!href || !label) {
+      toast("Enter URL and link text.", false);
+      return;
+    }
+    menusAddDraftItem(label, href, "custom");
+    if (hrefEl) hrefEl.value = "";
+    if (labelEl) labelEl.value = "";
+    toast("Added to menu. Click Save Menu when ready.", true);
+  }
+
+  async function selectMenuByLocation(loc, force) {
+    var next = loc === "footer" ? "footer" : "primary";
+    if (next === menuUi.editLocation && !force && menuUi.activeMenuId) {
+      fillMenusSelect();
+      return;
+    }
+    if (menuUi.dirty && !force) {
+      var ok = await confirmDialog(
+        "You have unsaved menu changes. Switch and discard them?",
+        "Discard"
+      );
+      if (!ok) {
+        fillMenusSelect();
+        return;
+      }
+    }
+    menuUi.editLocation = next;
+    var menu = resolveMenuForLocation(next);
+    menuUi.activeMenuId = menu ? menu.id : null;
+    fillMenusSelect();
+    loadActiveMenuDraft();
+  }
+
+  async function menusCreateMenu() {
+    var name =
+      menuUi.editLocation === "footer" ? "Footer Menu" : "Primary Menu";
+    var prompted = window.prompt("Menu name", name);
+    if (prompted == null) return;
+    name = String(prompted).trim() || name;
+    try {
+      var res = await Admin.api("POST", "/api/admin/cms/menus", {
+        createMenu: true,
+        name: name,
+      });
+      menuUi.doc = res.menus || menuUi.doc;
+      if (res.menu && res.menu.id) {
+        if (!menuUi.doc.locations) menuUi.doc.locations = {};
+        menuUi.doc.locations[menuUi.editLocation] = res.menu.id;
+        await Admin.api("PUT", "/api/admin/cms/menus", {
+          locations: menuUi.doc.locations,
+        });
+        menuUi.activeMenuId = res.menu.id;
+      }
+      fillLocationSelects();
+      loadActiveMenuDraft();
+      toast("Menu created for this location.", true);
+    } catch (ex) {
+      toast(ex.message || "Could not create menu.", false);
+    }
+  }
+
+  async function menusDeleteMenu() {
+    if (!menuUi.activeMenuId) return;
+    var ok = await confirmDialog(
+      "Delete this entire menu? This cannot be undone.",
+      "Delete Menu"
+    );
+    if (!ok) return;
+    try {
+      var res = await Admin.api("DELETE", "/api/admin/cms/menus", {
+        menuId: menuUi.activeMenuId,
+      });
+      menuUi.doc = res.menus || menuUi.doc;
+      var menu = resolveMenuForLocation(menuUi.editLocation);
+      menuUi.activeMenuId = menu ? menu.id : null;
+      fillMenusSelect();
+      fillLocationSelects();
+      loadActiveMenuDraft();
+      toast("Menu deleted.", true);
+    } catch (ex) {
+      toast(ex.message || "Could not delete menu.", false);
+    }
+  }
+
+  function orderedDraftItems() {
+    collectStructureEdits();
+    var ordered = [];
+    menuChildren(null).forEach(function (top) {
+      ordered.push(top);
+      menuChildren(top.id).forEach(function (c) {
+        ordered.push(c);
+      });
+    });
+    if (menuIsPrimaryAssigned()) {
+      menuChildren("__services__").forEach(function (c) {
+        ordered.push(c);
+      });
+    }
+    menuUi.draft.forEach(function (m) {
+      if (
+        !ordered.some(function (x) {
+          return x.id === m.id;
+        })
+      ) {
+        ordered.push(m);
+      }
+    });
+    return ordered.map(function (m, index) {
+      return {
+        id: m.id,
+        label: m.label,
+        href: m.href,
+        parentId: m.parentId,
+        order: index,
+        type: m.type,
+      };
+    });
+  }
+
+  async function menusSaveMenu() {
+    if (!menuUi.activeMenuId) {
+      // Auto-create a menu for this location if missing
+      try {
+        var created = await Admin.api("POST", "/api/admin/cms/menus", {
+          createMenu: true,
+          name:
+            menuUi.editLocation === "footer" ? "Footer Menu" : "Primary Menu",
+        });
+        menuUi.doc = created.menus || menuUi.doc;
+        if (created.menu && created.menu.id) {
+          menuUi.activeMenuId = created.menu.id;
+        }
+      } catch (ex) {
+        toast(ex.message || "Select a menu first.", false);
+        return;
+      }
+    }
+    var st = $("menus-save-status");
+    if (st) st.textContent = "Saving…";
+    try {
+      var nameEl = $("menus-name");
+      var name = nameEl ? nameEl.value.trim() : menuUi.draftName;
+      if (!name) {
+        name =
+          menuUi.editLocation === "footer" ? "Footer Menu" : "Primary Menu";
+      }
+      var items = orderedDraftItems();
+
+      var res = await Admin.api("PUT", "/api/admin/cms/menus", {
+        menuId: menuUi.activeMenuId,
+        name: name,
+        items: items,
+      });
+      menuUi.doc = res.menus || menuUi.doc;
+
+      // Always lock saved menu to the active location tab
+      var loc = {
+        primary: (menuUi.doc.locations && menuUi.doc.locations.primary) || null,
+        footer: (menuUi.doc.locations && menuUi.doc.locations.footer) || null,
+      };
+      loc[menuUi.editLocation] = menuUi.activeMenuId;
+      if (loc.primary === loc.footer) {
+        var other = menuUi.editLocation === "footer" ? "primary" : "footer";
+        var otherMenu = (menuUi.doc.menus || []).find(function (m) {
+          return m && m.id !== menuUi.activeMenuId;
+        });
+        loc[other] = otherMenu ? otherMenu.id : null;
+      }
+
+      await Admin.api("PUT", "/api/admin/cms/menus", { locations: loc });
+      var locRes = await Admin.api("GET", "/api/admin/cms/menus");
+      menuUi.doc = locRes.menus || menuUi.doc;
+
+      var menu = resolveMenuForLocation(menuUi.editLocation);
+      menuUi.activeMenuId = menu ? menu.id : menuUi.activeMenuId;
+      menuUi.draftName = menu ? menu.name : name;
+      menuUi.draft = normalizeMenuDraft(menu ? menu.items : items);
+      menuUi.dirty = false;
+      fillMenusSelect();
+      syncLocationHint();
+      if (st) st.textContent = "Saved. Refresh the website to see changes.";
+      toast(
+        menuUi.editLocation === "footer"
+          ? "Footer menu saved."
+          : "Primary (navbar) menu saved.",
+        true
+      );
+      renderMenusStructure();
+    } catch (ex) {
+      if (st) st.textContent = ex.message || "Could not save.";
+      toast(ex.message || "Could not save menu.", false);
+    }
+  }
+
+  async function menusSaveLocations() {
+    /* removed */
+  }
+
+  async function loadMenusPanel() {
+    var data = await Admin.api("GET", "/api/admin/cms/menus");
+    menuUi.doc = data.menus || {
+      menus: [],
+      locations: { primary: null, footer: null },
+    };
+    // Guarantee separate primary + footer menus exist in memory
+    resolveMenuForLocation("primary");
+    resolveMenuForLocation("footer");
+    try {
+      var cms = await Admin.api("GET", "/api/admin/cms");
+      menuUi.pages = cms.pages || [];
+      menuUi.customPages = cms.customPages || [];
+    } catch (ex) {
+      menuUi.pages = menuUi.pages || [];
+    }
+    try {
+      var postsData = await Admin.api("GET", "/api/admin/posts");
+      menuUi.posts = postsData.posts || postsData.items || [];
+    } catch (ex) {
+      menuUi.posts = [];
+    }
+
+    if (menuUi.editLocation !== "footer") menuUi.editLocation = "primary";
+    menuUi.dirty = false;
+    loadActiveMenuDraft();
+    renderMenusPagesList();
+    renderMenusPostsList();
+  }
+
+  function appendMenuManager(wrap) {
+    var note = document.createElement("div");
+    note.className = "cms-group";
+    note.innerHTML =
+      '<h4 class="cms-group-heading">Add / remove menu links</h4>' +
+      '<p class="cms-block-hint" style="margin:0">Use the sidebar <strong>Menus</strong> page (WordPress-style: named menus + locations).</p>' +
+      '<div class="form-actions" style="margin-top:0.75rem">' +
+      '<button type="button" class="btn btn-secondary btn-sm" id="cms-goto-menus">Open Menus</button></div>';
+    wrap.appendChild(note);
+    var btn = note.querySelector("#cms-goto-menus");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        showPanel("menus");
+      });
+    }
+  }
+
+  async function addCustomMenu() {}
+  async function deleteCustomMenu() {}
+  async function updateCustomMenu() {}
+
+
   async function renderCmsFields() {
     var wrap = $("cms-fields");
     if (!wrap) return;
@@ -769,6 +1630,7 @@
           "/api/admin/cms/layout-scan?region=" + encodeURIComponent(region)
         );
         cmsState.layoutFields = layoutScan.fields || [];
+        cmsState.layoutMenus = layoutScan.menus || [];
         cmsState.layoutValues = {};
         cmsState.layoutFields.forEach(function (f) {
           cmsState.layoutValues[f.id] = f.value;
@@ -780,15 +1642,17 @@
           if (f.kind === "img") return showImagesL;
           return false;
         });
-        if (!visibleL.length) {
-          wrap.innerHTML =
-            '<p class="cms-empty">No menus or links found in the ' +
-            region +
-            ". The homepage needs a header or footer.</p>";
-        } else {
+        if (!visibleL.length && !(cmsState.layoutMenus && cmsState.layoutMenus.length)) {
+          /* keep empty — menu manager still shows above */
+        }
+
+        // Add/remove custom menus first so it's easy to find
+        appendMenuManager(wrap, region);
+
+        if (visibleL.length) {
           var metaL = document.createElement("p");
           metaL.className = "cms-meta";
-          metaL.textContent = visibleL.length + " editable items found";
+          metaL.textContent = visibleL.length + " existing items · edit labels below";
           wrap.appendChild(metaL);
           var lastRefL = { name: null, el: null };
           visibleL.forEach(function (f) {
@@ -804,15 +1668,25 @@
               groupEl
             );
           });
+        } else if (!(cmsState.layoutMenus && cmsState.layoutMenus.length)) {
+          var emptyL = document.createElement("p");
+          emptyL.className = "cms-empty";
+          emptyL.textContent =
+            "No existing menu labels found to edit. You can still add a new link above.";
+          wrap.appendChild(emptyL);
         }
         if (stL) {
-          stL.textContent = "Edit labels below, then click Save to site.";
+          stL.textContent =
+            "Add new links at the top, or edit existing labels below — then Save.";
         }
       } catch (ex) {
-        wrap.innerHTML =
-          '<p class="cms-empty">Could not load menus: ' +
-          Admin.esc(ex.message || "error") +
-          "</p>";
+        wrap.innerHTML = "";
+        appendMenuManager(wrap, region);
+        var err = document.createElement("p");
+        err.className = "cms-empty";
+        err.textContent =
+          "Could not load existing menus: " + (ex.message || "error");
+        wrap.appendChild(err);
         if (stL) stL.textContent = ex.message || "Scan failed";
       }
       return;
@@ -1072,6 +1946,66 @@
       createServicePage();
     });
   }
+  if ($("menus-reload")) {
+    $("menus-reload").addEventListener("click", function () {
+      loadMenusPanel().catch(function (ex) {
+        toast(ex.message || "Unable to reload menus.", false);
+      });
+    });
+  }
+  if ($("menus-save-btn")) {
+    $("menus-save-btn").addEventListener("click", function () {
+      menusSaveMenu();
+    });
+  }
+  if ($("menus-save-btn-2")) {
+    $("menus-save-btn-2").addEventListener("click", function () {
+      menusSaveMenu();
+    });
+  }
+  if ($("menus-add-pages")) {
+    $("menus-add-pages").addEventListener("click", function () {
+      menusAddFromChecklist("menus-pages-list");
+    });
+  }
+  if ($("menus-add-posts")) {
+    $("menus-add-posts").addEventListener("click", function () {
+      menusAddFromChecklist("menus-posts-list");
+    });
+  }
+  if ($("menus-add-custom")) {
+    $("menus-add-custom").addEventListener("click", function () {
+      menusAddCustomLink();
+    });
+  }
+  ["menus-pages-list", "menus-posts-list"].forEach(function (id) {
+    var list = $(id);
+    if (!list) return;
+    list.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest(".wp-add-one") : null;
+      if (!btn || !list.contains(btn)) return;
+      e.preventDefault();
+      menusAddOneFromButton(btn);
+    });
+  });
+  if ($("menus-custom-href") && $("menus-custom-label")) {
+    ["menus-custom-href", "menus-custom-label"].forEach(function (id) {
+      $(id).addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          menusAddCustomLink();
+        }
+      });
+    });
+  }
+  if ($("menus-name")) {
+    $("menus-name").addEventListener("input", markMenusDirty);
+  }
+  document.querySelectorAll("[data-edit-loc]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      selectMenuByLocation(btn.getAttribute("data-edit-loc"));
+    });
+  });
   if ($("cms-save")) {
     $("cms-save").addEventListener("click", function () {
       saveCms();

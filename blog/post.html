@@ -5,16 +5,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Post | Townloc Blog</title>
+  <meta id="meta-description" name="description" content="Townloc blog post." />
   <meta name="robots" content="index, follow" />
+  <link id="canonical-link" rel="canonical" href="https://townloc.com/blog/post.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Townloc" />
+  <meta id="og-title" property="og:title" content="Post | Townloc Blog" />
+  <meta id="og-description" property="og:description" content="Townloc blog post." />
+  <meta id="og-url" property="og:url" content="https://townloc.com/blog/post.html" />
+  <meta id="og-image" property="og:image" content="https://townloc.com/assets/images/townloc-og.png?v=1" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Townloc" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta id="tw-title" name="twitter:title" content="Post | Townloc Blog" />
+  <meta id="tw-description" name="twitter:description" content="Townloc blog post." />
+  <meta id="tw-image" name="twitter:image" content="https://townloc.com/assets/images/townloc-og.png?v=1" />
   <link rel="icon"
-    href="/assets/images/townloc-favicon.png" />
+    href="/assets/images/townloc-favicon.png?v=2" />
+  <link rel="apple-touch-icon" href="/assets/images/townloc-favicon.png?v=2" />
+  <script type="application/ld+json" id="post-jsonld"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="../assets/tailwind.js"></script>
   <script>document.documentElement.classList.add("js");</script>
-  <link rel="stylesheet" href="../assets/site.css" />
+  <link rel="stylesheet" href="../assets/site.css?v=21" />
 </head>
 
 <body class="bg-paper text-ink antialiased">
@@ -24,10 +41,8 @@
     to content</a>
   <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-white/10 text-paper">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8" aria-label="Primary">
-      <a href="../index.html" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
-        <span
-          class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
-        <span class="text-[15px] font-semibold tracking-tight">Townloc</span>
+      <a href="../index.html" class="site-logo-link flex items-center" aria-label="Townloc home">
+        <img class="site-logo site-logo-header" src="../assets/images/townloc-logo.png?v=3" alt="Townloc" width="180" height="40" decoding="async" />
       </a>
       <ul class="hidden items-center gap-8 text-sm md:flex">
         <li class="nav-drop relative">
@@ -67,7 +82,7 @@
       </ul>
       <div class="flex items-center gap-3">
         <a href="../index.html#contact"
-          class="header-cta hidden rounded-full bg-paper px-4 py-2 text-sm font-medium text-ink md:inline-flex">Get
+          class="header-cta hidden rounded-full bg-white text-ink px-4 py-2 text-sm font-medium md:inline-flex">Get
           Started</a>
         <button id="menu-btn"
           class="grid h-10 w-10 place-items-center rounded-full border border-white/20 md:hidden"
@@ -99,6 +114,8 @@
           <li><a class="hover:text-ink" href="../index.html">Home</a></li>
           <li aria-hidden="true">/</li>
           <li><a class="hover:text-ink" href="index.html">Blog</a></li>
+          <li aria-hidden="true">/</li>
+          <li id="post-crumb" class="text-ink/70">Post</li>
         </ol>
       </nav>
       <h1 id="post-title" class="mt-8 font-serif text-4xl tracking-tight sm:text-5xl">Loading…</h1>
@@ -111,8 +128,13 @@
 
   <footer class="site-footer bg-ink px-5 py-14 text-paper lg:px-8">
     <div class="mx-auto max-w-7xl">
+      <div style="margin-bottom:1.25rem">
+        <a href="../index.html" class="footer-logo-link site-logo-link" aria-label="Townloc home">
+          <img class="site-logo site-logo-footer" src="../assets/images/townloc-logo.png?v=3" alt="Townloc" width="190" height="44" decoding="async" />
+        </a>
+      </div>
       <div class="footer-bottom">
-        <p>© <span id="year"></span> Townloc</p>
+        <p data-cms="footer.copyrightName">© <span id="year"></span> Townloc. All rights reserved.</p>
         <a href="../index.html#contact" class="footer-cta">Get a Free Assessment</a>
       </div>
     </div>
@@ -125,20 +147,123 @@
       var params = new URLSearchParams(location.search);
       var slug = params.get("slug") || "";
       var err = document.getElementById("post-error");
+      var DEFAULT_OG = "https://townloc.com/assets/images/townloc-og.png?v=1";
+
+      function setMeta(id, content) {
+        var el = document.getElementById(id);
+        if (el && content) el.setAttribute("content", content);
+      }
+
+      function absUrl(u) {
+        if (!u) return "";
+        if (/^https?:\/\//i.test(u)) return u;
+        if (u.charAt(0) === "/") return "https://townloc.com" + u;
+        return "https://townloc.com/" + u.replace(/^\.\.\//, "");
+      }
+
       if (!slug) {
         err.textContent = "Missing post slug.";
         err.classList.remove("hidden");
         return;
       }
+
+      var pageUrl =
+        "https://townloc.com/blog/post.html?slug=" + encodeURIComponent(slug);
+      var canon = document.getElementById("canonical-link");
+      if (canon) canon.setAttribute("href", pageUrl);
+      setMeta("og-url", pageUrl);
+
       fetch(API + "/api/posts/" + encodeURIComponent(slug))
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (r) {
+          return r.json().then(function (d) {
+            return { ok: r.ok, d: d };
+          });
+        })
         .then(function (res) {
-          if (!res.ok || !res.d.post) throw new Error((res.d && res.d.message) || "Not found");
+          if (!res.ok || !res.d.post)
+            throw new Error((res.d && res.d.message) || "Not found");
           var p = res.d.post;
-          document.title = p.title + " | Townloc Blog";
+          var title =
+            (p.meta_title && String(p.meta_title).trim()) ||
+            p.title ||
+            "Post";
+          var docTitle = /townloc/i.test(title)
+            ? title
+            : title + " | Townloc Blog";
+          var desc =
+            (p.meta_description && String(p.meta_description).trim()) ||
+            (p.excerpt && String(p.excerpt).trim()) ||
+            "Townloc blog — notes on Google Business Profile, reviews, ads, and websites for local businesses.";
+          var image =
+            absUrl(p.og_image) ||
+            absUrl(p.featured_image) ||
+            DEFAULT_OG;
+
+          document.title = docTitle;
+          setMeta("meta-description", desc);
+          setMeta("og-title", docTitle);
+          setMeta("og-description", desc);
+          setMeta("og-image", image);
+          setMeta("tw-title", docTitle);
+          setMeta("tw-description", desc);
+          setMeta("tw-image", image);
+
           document.getElementById("post-title").textContent = p.title;
-          document.getElementById("post-date").textContent = p.updated_at || "";
+          var crumb = document.getElementById("post-crumb");
+          if (crumb) crumb.textContent = p.title;
+          document.getElementById("post-date").textContent =
+            p.updated_at || p.created_at || "";
           document.getElementById("post-body").innerHTML = p.body || "";
+
+          var ld = {
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "BlogPosting",
+                headline: p.title,
+                description: desc,
+                image: image,
+                datePublished: p.created_at || undefined,
+                dateModified: p.updated_at || p.created_at || undefined,
+                mainEntityOfPage: pageUrl,
+                url: pageUrl,
+                author: { "@type": "Organization", name: "Townloc" },
+                publisher: {
+                  "@type": "Organization",
+                  name: "Townloc",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: "https://townloc.com/assets/images/townloc-logo.png",
+                  },
+                },
+              },
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Home",
+                    item: "https://townloc.com/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Blog",
+                    item: "https://townloc.com/blog/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: p.title,
+                    item: pageUrl,
+                  },
+                ],
+              },
+            ],
+          };
+          var ldEl = document.getElementById("post-jsonld");
+          if (ldEl) ldEl.textContent = JSON.stringify(ld);
         })
         .catch(function (e) {
           err.textContent = e.message || "Could not load post.";

@@ -23,6 +23,7 @@ import {
   applyAllLayout,
   injectCustomMenus,
   normalizeMenuHref,
+  normalizeCustomMenusDoc,
 } from "./cmsLayout.js";
 
 const LAYOUT_SOURCE = "index.html";
@@ -68,15 +69,15 @@ function customPagesFromDoc(doc) {
 }
 
 function customMenusFromDoc(doc) {
-  const m = doc && doc.customMenus && typeof doc.customMenus === "object" ? doc.customMenus : {};
-  return {
-    header: Array.isArray(m.header) ? m.header : [],
-    footer: Array.isArray(m.footer) ? m.footer : [],
-  };
+  return normalizeCustomMenusDoc(doc && doc.customMenus);
 }
 
 function newMenuId() {
   return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function newMenuGroupId() {
+  return `menu_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
 function editablePagePaths(doc) {
@@ -163,7 +164,7 @@ function parseAllowedOrigins(env) {
 
 function corsHeaders(origin) {
   const headers = {
-    "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "access-control-allow-headers": "Content-Type, Authorization",
     "access-control-max-age": "86400",
   };
@@ -1412,6 +1413,190 @@ async function handleAdminCmsPut(request, env, origin) {
   return json({ success: true, cms: merged }, 200, origin);
 }
 
+function persistCustomMenus(current, menus) {
+  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
+  merged.customMenus = menus;
+  if (current.layout) merged.layout = current.layout;
+  if (current.autoPages) merged.autoPages = current.autoPages;
+  if (current.customPages) merged.customPages = current.customPages;
+  return merged;
+}
+
+function sanitizeMenuItems(rawItems, allowServicesParent) {
+  const cleaned = [];
+  const ids = new Set();
+  const list = Array.isArray(rawItems) ? rawItems : [];
+  list.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const label = String(item.label || "").trim().slice(0, 80);
+    const hrefRaw = String(item.href || "").trim();
+    if (!label || !hrefRaw) return;
+    const href = normalizeMenuHref(hrefRaw).slice(0, 500);
+    if (!href) return;
+    let id =
+      typeof item.id === "string" && item.id.trim()
+        ? item.id.trim().slice(0, 80)
+        : newMenuId();
+    if (ids.has(id)) id = newMenuId();
+    ids.add(id);
+
+    let parentId =
+      item.parentId == null || item.parentId === ""
+        ? null
+        : String(item.parentId).slice(0, 80);
+    if (!parentId && String(item.placement || "") === "services") {
+      parentId = "__services__";
+    }
+    if (!allowServicesParent && parentId === "__services__") parentId = null;
+    if (parentId === id) parentId = null;
+
+    const type =
+      item.type === "page" || item.type === "post" ? item.type : "custom";
+    const placement =
+      parentId === "__services__" ? "services" : parentId ? "child" : "top";
+
+    cleaned.push({
+      id,
+      label,
+      href,
+      parentId,
+      order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+      placement,
+      type,
+      created_at:
+        typeof item.created_at === "string"
+          ? item.created_at
+          : new Date().toISOString(),
+    });
+  });
+
+  const byId = Object.fromEntries(cleaned.map((m) => [m.id, m]));
+  cleaned.forEach((item) => {
+    if (!item.parentId || item.parentId === "__services__") return;
+    const parent = byId[item.parentId];
+    if (!parent) {
+      item.parentId = null;
+      item.placement = "top";
+      return;
+    }
+    if (parent.parentId) item.parentId = null;
+  });
+
+  cleaned.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+  cleaned.forEach((item, index) => {
+    item.order = index;
+  });
+  return cleaned;
+}
+
+function menuAssignedToPrimary(doc, menuId) {
+  return doc.locations && doc.locations.primary === menuId;
+}
+
+/** PUT — save menu tree, or save location assignments */
+async function handleAdminMenuSave(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, message: "Invalid JSON." }, 400, origin);
+  }
+
+  const current = await readCmsDocument(env);
+  const doc = customMenusFromDoc(current);
+
+  // Manage Locations
+  if (body.locations && typeof body.locations === "object") {
+    const ids = new Set(doc.menus.map((m) => m.id));
+    const nextLoc = {
+      primary:
+        body.locations.primary === "" || body.locations.primary == null
+          ? null
+          : String(body.locations.primary),
+      footer:
+        body.locations.footer === "" || body.locations.footer == null
+          ? null
+          : String(body.locations.footer),
+    };
+    if (nextLoc.primary && !ids.has(nextLoc.primary)) {
+      return json({ success: false, message: "Invalid primary menu." }, 400, origin);
+    }
+    if (nextLoc.footer && !ids.has(nextLoc.footer)) {
+      return json({ success: false, message: "Invalid footer menu." }, 400, origin);
+    }
+    doc.locations = nextLoc;
+    const merged = persistCustomMenus(current, doc);
+    await writeCmsDocument(env, merged);
+    return json({ success: true, menus: doc, cms: merged }, 200, origin);
+  }
+
+  // Save one named menu (WordPress Save Menu)
+  const menuId = typeof body.menuId === "string" ? body.menuId.trim() : "";
+  // Legacy: region header/footer maps to location-assigned menu
+  let targetId = menuId;
+  if (!targetId && body.region) {
+    const region = String(body.region).toLowerCase() === "footer" ? "footer" : "primary";
+    targetId = doc.locations[region] || (region === "footer" ? "menu_footer" : "menu_primary");
+  }
+  if (!targetId) {
+    return json({ success: false, message: "Missing menuId." }, 400, origin);
+  }
+  let safeIdx = doc.menus.findIndex((m) => m.id === targetId);
+  if (safeIdx < 0) {
+    const fallbackName =
+      typeof body.name === "string" && body.name.trim()
+        ? body.name.trim().slice(0, 80)
+        : String(body.region || "").toLowerCase() === "footer" ||
+            targetId === "menu_footer"
+          ? "Footer Menu"
+          : "Primary Menu";
+    doc.menus.push({
+      id: targetId,
+      name: fallbackName,
+      items: [],
+    });
+    safeIdx = doc.menus.length - 1;
+  }
+
+  const name =
+    typeof body.name === "string" && body.name.trim()
+      ? body.name.trim().slice(0, 80)
+      : doc.menus[safeIdx].name;
+
+  const allowServices = menuAssignedToPrimary(doc, targetId);
+  const items = sanitizeMenuItems(body.items, allowServices);
+  if (items.length > 80) {
+    return json(
+      { success: false, message: "Too many menu items (max 80)." },
+      400,
+      origin
+    );
+  }
+
+  doc.menus[safeIdx] = { ...doc.menus[safeIdx], id: targetId, name, items };
+  if (!doc.locations) doc.locations = { primary: null, footer: null };
+  if (targetId === "menu_footer" || String(body.region || "").toLowerCase() === "footer") {
+    if (!doc.locations.footer) doc.locations.footer = targetId;
+  }
+  if (targetId === "menu_primary" || String(body.region || "").toLowerCase() === "header") {
+    if (!doc.locations.primary) doc.locations.primary = targetId;
+  }
+
+  const merged = persistCustomMenus(current, doc);
+  await writeCmsDocument(env, merged);
+  return json(
+    {
+      success: true,
+      menus: doc,
+      menu: doc.menus[safeIdx],
+      cms: merged,
+    },
+    200,
+    origin
+  );
+}
+
+/** POST — create a new named menu (WordPress “create a new menu”) */
 async function handleAdminMenuCreate(request, env, origin) {
   let body;
   try {
@@ -1419,45 +1604,67 @@ async function handleAdminMenuCreate(request, env, origin) {
   } catch {
     return json({ success: false, message: "Invalid JSON." }, 400, origin);
   }
-  const region = String(body.region || "").toLowerCase() === "footer" ? "footer" : "header";
-  const label = typeof body.label === "string" ? body.label.trim() : "";
-  const hrefRaw = typeof body.href === "string" ? body.href.trim() : "";
-  if (!label || label.length < 1) {
-    return json({ success: false, message: "Enter a menu name." }, 400, origin);
-  }
-  if (label.length > 80) {
-    return json({ success: false, message: "Menu name is too long." }, 400, origin);
-  }
-  if (!hrefRaw) {
-    return json(
-      { success: false, message: "Enter a link (example: /blog/ or #contact)." },
-      400,
-      origin
+
+  // Legacy single-item create still supported if label+href present without createMenu flag
+  if (
+    typeof body.label === "string" &&
+    typeof body.href === "string" &&
+    body.createMenu !== true &&
+    !body.name
+  ) {
+    const current = await readCmsDocument(env);
+    const doc = customMenusFromDoc(current);
+    const region =
+      String(body.region || "").toLowerCase() === "footer" ? "footer" : "primary";
+    const menuId =
+      doc.locations[region] ||
+      (region === "footer" ? "menu_footer" : "menu_primary");
+    let menu = doc.menus.find((m) => m.id === menuId);
+    if (!menu) {
+      menu = { id: menuId, name: region === "footer" ? "Footer Menu" : "Primary Menu", items: [] };
+      doc.menus.push(menu);
+      doc.locations[region] = menuId;
+    }
+    const entry = {
+      id: newMenuId(),
+      label: body.label.trim().slice(0, 80),
+      href: normalizeMenuHref(body.href.trim()).slice(0, 500),
+      parentId:
+        body.parentId ||
+        (body.placement === "services" ? "__services__" : null),
+      order: menu.items.length,
+      type: "custom",
+    };
+    menu.items = sanitizeMenuItems(
+      [...menu.items, entry],
+      menuAssignedToPrimary(doc, menu.id)
     );
-  }
-  const href = normalizeMenuHref(hrefRaw);
-  if (href.length > 500) {
-    return json({ success: false, message: "Link is too long." }, 400, origin);
+    const merged = persistCustomMenus(current, doc);
+    await writeCmsDocument(env, merged);
+    return json({ success: true, menu: entry, menus: doc, cms: merged }, 201, origin);
   }
 
+  const name =
+    typeof body.name === "string" && body.name.trim()
+      ? body.name.trim().slice(0, 80)
+      : "New Menu";
   const current = await readCmsDocument(env);
-  const menus = customMenusFromDoc(current);
+  const doc = customMenusFromDoc(current);
+  if (doc.menus.length >= 20) {
+    return json({ success: false, message: "Too many menus (max 20)." }, 400, origin);
+  }
   const entry = {
-    id: newMenuId(),
-    label,
-    href,
-    created_at: new Date().toISOString(),
+    id: newMenuGroupId(),
+    name,
+    items: [],
   };
-  menus[region] = [...menus[region], entry];
-  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
-  merged.customMenus = menus;
-  if (current.layout) merged.layout = current.layout;
-  if (current.autoPages) merged.autoPages = current.autoPages;
-  if (current.customPages) merged.customPages = current.customPages;
+  doc.menus.push(entry);
+  const merged = persistCustomMenus(current, doc);
   await writeCmsDocument(env, merged);
-  return json({ success: true, menu: entry, menus: menus[region], cms: merged }, 201, origin);
+  return json({ success: true, menu: entry, menus: doc, cms: merged }, 201, origin);
 }
 
+/** DELETE — delete a named menu, or delete one item (legacy: region+id) */
 async function handleAdminMenuDelete(request, env, origin) {
   let body;
   try {
@@ -1465,57 +1672,97 @@ async function handleAdminMenuDelete(request, env, origin) {
   } catch {
     return json({ success: false, message: "Invalid JSON." }, 400, origin);
   }
-  const region = String(body.region || "").toLowerCase() === "footer" ? "footer" : "header";
+  const current = await readCmsDocument(env);
+  const doc = customMenusFromDoc(current);
+
+  const menuId = typeof body.menuId === "string" ? body.menuId.trim() : "";
+  if (menuId) {
+    if (doc.menus.length <= 1) {
+      return json(
+        { success: false, message: "Keep at least one menu." },
+        400,
+        origin
+      );
+    }
+    doc.menus = doc.menus.filter((m) => m.id !== menuId);
+    if (doc.locations.primary === menuId) doc.locations.primary = null;
+    if (doc.locations.footer === menuId) doc.locations.footer = null;
+    const merged = persistCustomMenus(current, doc);
+    await writeCmsDocument(env, merged);
+    return json({ success: true, menus: doc, cms: merged }, 200, origin);
+  }
+
+  // Legacy: remove one item from a region/menu
   const id = typeof body.id === "string" ? body.id.trim() : "";
   if (!id) {
     return json({ success: false, message: "Missing menu id." }, 400, origin);
   }
-  const current = await readCmsDocument(env);
-  const menus = customMenusFromDoc(current);
-  menus[region] = menus[region].filter((m) => m && m.id !== id);
-  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
-  merged.customMenus = menus;
-  if (current.layout) merged.layout = current.layout;
-  if (current.autoPages) merged.autoPages = current.autoPages;
-  if (current.customPages) merged.customPages = current.customPages;
+  const region =
+    String(body.region || "").toLowerCase() === "footer" ? "footer" : "primary";
+  const targetId =
+    (typeof body.targetMenuId === "string" && body.targetMenuId) ||
+    doc.locations[region] ||
+    doc.menus[0]?.id;
+  const menu = doc.menus.find((m) => m.id === targetId);
+  if (!menu) {
+    return json({ success: false, message: "Menu not found." }, 404, origin);
+  }
+  menu.items = sanitizeMenuItems(
+    menu.items.filter((m) => m && m.id !== id),
+    menuAssignedToPrimary(doc, menu.id)
+  );
+  const merged = persistCustomMenus(current, doc);
   await writeCmsDocument(env, merged);
-  return json({ success: true, menus: menus[region], cms: merged }, 200, origin);
+  return json({ success: true, menus: doc, cms: merged }, 200, origin);
 }
 
 async function handleAdminMenuUpdate(request, env, origin) {
+  // Prefer full Save Menu (PUT). PATCH kept for light edits on one item.
   let body;
   try {
     body = await request.json();
   } catch {
     return json({ success: false, message: "Invalid JSON." }, 400, origin);
   }
-  const region = String(body.region || "").toLowerCase() === "footer" ? "footer" : "header";
+  const current = await readCmsDocument(env);
+  const doc = customMenusFromDoc(current);
+  const region =
+    String(body.region || "").toLowerCase() === "footer" ? "footer" : "primary";
+  const targetId =
+    (typeof body.menuId === "string" && body.menuId.trim()) ||
+    doc.locations[region] ||
+    doc.menus[0]?.id;
+  const menu = doc.menus.find((m) => m.id === targetId);
+  if (!menu) {
+    return json({ success: false, message: "Menu not found." }, 404, origin);
+  }
   const id = typeof body.id === "string" ? body.id.trim() : "";
   if (!id) {
-    return json({ success: false, message: "Missing menu id." }, 400, origin);
+    return json({ success: false, message: "Missing item id." }, 400, origin);
   }
-  const current = await readCmsDocument(env);
-  const menus = customMenusFromDoc(current);
-  const idx = menus[region].findIndex((m) => m && m.id === id);
+  const idx = menu.items.findIndex((m) => m && m.id === id);
   if (idx < 0) {
     return json({ success: false, message: "Menu item not found." }, 404, origin);
   }
-  const next = { ...menus[region][idx] };
+  const next = { ...menu.items[idx] };
   if (typeof body.label === "string" && body.label.trim()) {
     next.label = body.label.trim().slice(0, 80);
   }
   if (typeof body.href === "string" && body.href.trim()) {
     next.href = normalizeMenuHref(body.href.trim()).slice(0, 500);
   }
-  menus[region] = menus[region].slice();
-  menus[region][idx] = next;
-  const merged = deepMerge(CMS_DEFAULTS, { ...current, customMenus: menus });
-  merged.customMenus = menus;
-  if (current.layout) merged.layout = current.layout;
-  if (current.autoPages) merged.autoPages = current.autoPages;
-  if (current.customPages) merged.customPages = current.customPages;
+  if (Object.prototype.hasOwnProperty.call(body, "parentId")) {
+    next.parentId =
+      body.parentId == null || body.parentId === ""
+        ? null
+        : String(body.parentId);
+  }
+  menu.items = menu.items.slice();
+  menu.items[idx] = next;
+  menu.items = sanitizeMenuItems(menu.items, menuAssignedToPrimary(doc, menu.id));
+  const merged = persistCustomMenus(current, doc);
   await writeCmsDocument(env, merged);
-  return json({ success: true, menu: next, menus: menus[region], cms: merged }, 200, origin);
+  return json({ success: true, menus: doc, cms: merged }, 200, origin);
 }
 
 async function serveAssetWithCms(request, env) {
@@ -1613,6 +1860,13 @@ async function handleAdmin(request, env, origin, url) {
   if (path === "/api/admin/cms/layout-scan" && request.method === "GET") {
     const region = url.searchParams.get("region") || "header";
     return handleAdminCmsLayoutScan(env, origin, region);
+  }
+  if (path === "/api/admin/cms/menus" && request.method === "GET") {
+    const doc = await readCmsDocument(env);
+    return json({ success: true, menus: customMenusFromDoc(doc) }, 200, origin);
+  }
+  if (path === "/api/admin/cms/menus" && request.method === "PUT") {
+    return handleAdminMenuSave(request, env, origin);
   }
   if (path === "/api/admin/cms/menus" && request.method === "POST") {
     return handleAdminMenuCreate(request, env, origin);

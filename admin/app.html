@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Townloc Admin</title>
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin.css?v=2" />
 </head>
 
 <body>
@@ -21,6 +21,7 @@
         <button type="button" class="nav-item" data-nav="leads">Leads</button>
         <button type="button" class="nav-item" data-nav="posts">Posts</button>
         <button type="button" class="nav-item" data-nav="site-cms">Site CMS</button>
+        <button type="button" class="nav-item" data-nav="menus">Menus</button>
         <button type="button" class="nav-item" data-nav="settings">Settings</button>
         <button type="button" class="nav-item nav-item-muted" data-nav="pages" title="For developers">Advanced</button>
       </nav>
@@ -299,6 +300,92 @@
           </div>
         </section>
 
+        <!-- Menus -->
+        <section id="panel-menus" class="panel">
+          <div class="wp-menus">
+            <header class="cms-topbar">
+              <div class="cms-topbar-copy">
+                <h2 class="cms-title">Menus</h2>
+                <p class="cms-lead">
+                  Pick Primary or Footer, add items on the left, arrange on the right, then Save Menu.
+                </p>
+              </div>
+              <button type="button" class="btn btn-primary" id="menus-save-btn">Save Menu</button>
+            </header>
+
+            <div class="wp-menus-select-bar card">
+              <div class="wp-loc-tabs" role="tablist" aria-label="Menu location">
+                <button type="button" class="wp-loc-tab active" data-edit-loc="primary" id="menus-tab-primary">
+                  Primary Menu (Navbar)
+                </button>
+                <button type="button" class="wp-loc-tab" data-edit-loc="footer" id="menus-tab-footer">
+                  Footer Menu
+                </button>
+              </div>
+              <select id="menus-select" hidden>
+                <option value="primary" selected>primary</option>
+                <option value="footer">footer</option>
+              </select>
+              <button type="button" class="btn btn-secondary btn-sm" id="menus-reload">Refresh</button>
+              <p id="menus-save-status" class="hint" style="margin:0"></p>
+            </div>
+
+            <div class="wp-menus-grid">
+              <aside class="wp-menus-add">
+                <h3 class="wp-menus-col-title">Add menu items</h3>
+
+                <details class="wp-acc" open>
+                  <summary>Pages</summary>
+                  <div class="wp-acc-body">
+                    <p class="hint" style="margin:0 0 0.55rem">Click <strong>Add</strong> next to a page (or tick several, then Add selected).</p>
+                    <div id="menus-pages-list" class="wp-check-list"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="menus-add-pages">Add selected</button>
+                  </div>
+                </details>
+
+                <details class="wp-acc">
+                  <summary>Posts</summary>
+                  <div class="wp-acc-body">
+                    <p class="hint" style="margin:0 0 0.55rem">Click <strong>Add</strong> next to a post.</p>
+                    <div id="menus-posts-list" class="wp-check-list"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="menus-add-posts">Add selected</button>
+                  </div>
+                </details>
+
+                <details class="wp-acc" open>
+                  <summary>Custom Links</summary>
+                  <div class="wp-acc-body">
+                    <label class="field-label" for="menus-custom-href">URL</label>
+                    <input type="text" id="menus-custom-href" placeholder="https://… or /page.html or #section" maxlength="500" />
+                    <label class="field-label" for="menus-custom-label">Link Text</label>
+                    <input type="text" id="menus-custom-label" placeholder="Menu label" maxlength="80" />
+                    <button type="button" class="btn btn-primary btn-sm" id="menus-add-custom" style="margin-top:0.65rem">Add to Menu</button>
+                  </div>
+                </details>
+              </aside>
+
+              <div class="wp-menus-structure">
+                <div class="wp-menus-name-row">
+                  <label class="field-label" for="menus-name">Menu Name</label>
+                  <input type="text" id="menus-name" class="wp-menus-name" maxlength="80" placeholder="Menu name" />
+                </div>
+
+                <h3 class="wp-menus-col-title">Menu structure</h3>
+                <p class="hint" style="margin:0 0 0.85rem" id="menus-location-hint">
+                  Editing Primary (Navbar) menu.
+                </p>
+                <div id="menus-structure" class="wp-structure"></div>
+                <p id="menus-structure-empty" class="cms-empty">No items yet. On the left, click <strong>Add</strong> beside a page — then <strong>Save Menu</strong>.</p>
+
+                <div class="wp-menus-footer-actions">
+                  <span class="hint" style="margin:0">Click an item to edit · → makes sub item</span>
+                  <button type="button" class="btn btn-primary" id="menus-save-btn-2">Save Menu</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Advanced: raw HTML (not for normal CMS use) -->
         <section id="panel-pages" class="panel">
           <div class="card" style="margin-bottom:1rem">
@@ -413,7 +500,7 @@
   </div>
 
   <script src="admin.js"></script>
-  <script src="admin-app.js"></script>
+  <script src="admin-app.js?v=2"></script>
 </body>
 
 </html>

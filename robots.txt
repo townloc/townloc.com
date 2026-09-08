@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /backend/
+Disallow: /api/
+
+Sitemap: https://townloc.com/sitemap.xml

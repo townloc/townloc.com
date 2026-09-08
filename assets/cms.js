@@ -39,17 +39,25 @@
     if (!branding) return;
     applyFavicon(branding.faviconUrl);
 
+    var logo = branding.logoUrl && String(branding.logoUrl).trim();
+    if (logo) {
+      document.querySelectorAll("img.site-logo").forEach(function (el) {
+        setSrc(el, logo);
+      });
+    }
+
     document.querySelectorAll("[data-cms='brand.name']").forEach(function (el) {
       setText(el, branding.name);
     });
     document.querySelectorAll("[data-cms='brand.mark']").forEach(function (el) {
-      if (branding.logoUrl && String(branding.logoUrl).trim()) {
+      if (logo) {
         el.textContent = "";
         el.style.backgroundImage =
           'url("' +
-          String(branding.logoUrl).replace(/\\/g, "\\\\").replace(/"/g, '\\"') +
+          String(logo).replace(/\\/g, "\\\\").replace(/"/g, '\\"') +
           '")';
-        el.style.backgroundSize = "cover";
+        el.style.backgroundSize = "contain";
+        el.style.backgroundRepeat = "no-repeat";
         el.style.backgroundPosition = "center";
       } else {
         setText(el, branding.mark);
@@ -62,19 +70,9 @@
         if (!el.hasAttribute("data-cms")) setText(el, branding.name);
       });
     }
-    if (branding.mark && !(branding.logoUrl && String(branding.logoUrl).trim())) {
+    if (branding.mark && !logo) {
       document.querySelectorAll("#site-header .header-mark").forEach(function (el) {
         if (!el.hasAttribute("data-cms")) setText(el, branding.mark);
-      });
-    }
-    if (branding.logoUrl && String(branding.logoUrl).trim()) {
-      document.querySelectorAll("#site-header .header-mark").forEach(function (el) {
-        if (el.hasAttribute("data-cms")) return;
-        el.textContent = "";
-        el.style.backgroundImage =
-          'url("' + String(branding.logoUrl).replace(/"/g, "%22") + '")';
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
       });
     }
   }

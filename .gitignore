@@ -6,6 +6,7 @@ Desktop.ini
 *.log
 .vscode/
 .idea/
+.wrangler/
 backend/worker/node_modules/
 backend/worker/.wrangler/
 backend/worker/dist/

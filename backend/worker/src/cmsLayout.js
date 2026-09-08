@@ -429,79 +429,191 @@ export function normalizeMenuHref(href) {
 }
 
 function stripInjectedMenus(html) {
-  return String(html)
-    .replace(/<li\b[^>]*data-cms-extra-menu=["'][^"']*["'][^>]*>[\s\S]*?<\/li>/gi, "")
-    .replace(
-      /<a\b[^>]*data-cms-extra-menu=["'][^"']*["'][^>]*>[\s\S]*?<\/a>/gi,
+  let out = String(html);
+  // Remove innermost data-cms-extra-menu nodes first (handles nested dropdowns).
+  for (let i = 0; i < 40; i += 1) {
+    const next = out.replace(
+      /<(li|a|div)\b[^>]*\bdata-cms-extra-menu=["'][^"']*["'][^>]*>((?:(?!<(?:li|a|div)\b[^>]*\bdata-cms-extra-menu=)[\s\S])*?)<\/\1>/gi,
       ""
     );
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+
+function normalizeMenuItems(items) {
+  const list = Array.isArray(items) ? items.slice() : [];
+  return list
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+      let parentId = item.parentId == null || item.parentId === "" ? null : String(item.parentId);
+      if (!parentId && item.placement === "services") parentId = "__services__";
+      return {
+        id: String(item.id || `m_${index}`),
+        label: String(item.label || "").trim() || "Link",
+        href: normalizeMenuHref(item.href || "#"),
+        parentId,
+        order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+}
+
+function childrenOf(items, parentId) {
+  const pid = parentId == null ? null : String(parentId);
+  return items.filter((i) => (i.parentId == null ? null : String(i.parentId)) === pid);
+}
+
+function dropCaretSvg() {
+  return `<svg class="nav-drop-caret h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>`;
 }
 
 function injectHeaderMenus(html, items) {
-  if (!items.length) return html;
+  const list = normalizeMenuItems(items);
+  if (!list.length) return html;
   let out = html;
 
-  const desktopLis = items
-    .map((item) => {
-      const id = escapeHtml(item.id);
-      const href = escapeHtml(normalizeMenuHref(item.href));
-      const label = escapeHtml(item.label);
-      return `<li data-cms-extra-menu="${id}"><a class="nav-link opacity-85" href="${href}">${label}</a></li>`;
-    })
-    .join("\n        ");
+  const tops = childrenOf(list, null);
+  const serviceKids = childrenOf(list, "__services__");
 
-  // Primary desktop nav list (has several nav-link items)
-  out = out.replace(
-    /(<ul\b[^>]*(?:class=["'][^"']*items-center[^"']*["']|class=["'][^"']*nav[^"']*["'])[^>]*>)([\s\S]*?)(<\/ul>)/i,
-    (full, open, inner, close) => {
-      if (!/nav-link/i.test(inner)) return full;
-      if (/data-cms-extra-menu/i.test(inner)) return full;
-      return `${open}${inner}\n        ${desktopLis}\n      ${close}`;
+  const desktopParts = [];
+  const mobileParts = [];
+
+  tops.forEach((item) => {
+    const kids = childrenOf(list, item.id);
+    const id = escapeHtml(item.id);
+    const href = escapeHtml(item.href);
+    const label = escapeHtml(item.label);
+
+    if (kids.length) {
+      const childLinks = kids
+        .map((k, idx) => {
+          const n = String(idx + 1).padStart(2, "0");
+          return `<a class="nav-drop-item" data-cms-extra-menu="${escapeHtml(k.id)}" href="${escapeHtml(k.href)}"><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${escapeHtml(k.label)}</span><span class="nav-drop-arrow">→</span></a>`;
+        })
+        .join("\n                  ");
+      desktopParts.push(`<li class="nav-drop relative" data-cms-extra-menu="${id}">
+          <button type="button" class="nav-drop-btn nav-link inline-flex items-center gap-1 opacity-85" aria-expanded="false" aria-haspopup="true">${label}
+            ${dropCaretSvg()}
+          </button>
+          <div class="nav-drop-menu absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] pt-3">
+            <div class="nav-drop-panel rounded-[1.35rem] p-1.5">
+                  ${childLinks}
+            </div>
+          </div>
+        </li>`);
+
+      const mobileChild = kids
+        .map(
+          (k) =>
+            `<a class="nav-drop-item mobile-link" data-cms-extra-menu="${escapeHtml(k.id)}" href="${escapeHtml(k.href)}"><span class="nav-drop-name">${escapeHtml(k.label)}</span></a>`
+        )
+        .join("\n");
+      mobileParts.push(`<div class="mobile-menu-item" data-cms-extra-menu="${id}">
+            <button type="button" class="mobile-services-btn" aria-expanded="false">${label}</button>
+            <div class="mobile-services"><div class="mobile-services-clip"><div class="nav-drop-panel rounded-[1.35rem] p-1.5">${mobileChild}</div></div></div>
+          </div>`);
+    } else {
+      desktopParts.push(
+        `<li data-cms-extra-menu="${id}"><a class="nav-link opacity-85" href="${href}">${label}</a></li>`
+      );
+      mobileParts.push(
+        `<a data-cms-extra-menu="${id}" href="${href}" class="mobile-link mobile-menu-item">${label}</a>`
+      );
     }
-  );
+  });
 
-  const mobileAs = items
-    .map((item) => {
-      const id = escapeHtml(item.id);
-      const href = escapeHtml(normalizeMenuHref(item.href));
-      const label = escapeHtml(item.label);
-      return `<a data-cms-extra-menu="${id}" href="${href}" class="mobile-link mobile-menu-item">${label}</a>`;
-    })
-    .join("\n          ");
+  if (desktopParts.length) {
+    const desktopLis = desktopParts.join("\n        ");
+    out = out.replace(
+      /(<ul\b[^>]*(?:class=["'][^"']*items-center[^"']*["']|class=["'][^"']*nav[^"']*["'])[^>]*>)([\s\S]*?)(<\/ul>)/i,
+      (full, open, inner, close) => {
+        if (!/nav-link/i.test(inner)) return full;
+        if (/data-cms-extra-menu=/i.test(inner)) return full;
+        return `${open}${inner}\n        ${desktopLis}\n      ${close}`;
+      }
+    );
+  }
 
-  if (/mobile-menu-nav/i.test(out)) {
+  if (mobileParts.length) {
+    const mobileAs = mobileParts.join("\n          ");
     if (/mobile-menu-cta/i.test(out)) {
       out = out.replace(
         /(<a\b[^>]*class=["'][^"']*mobile-menu-cta[^"']*["'][^>]*>)/i,
         `${mobileAs}\n          $1`
       );
-    } else {
-      out = out.replace(
-        /(<div\b[^>]*class=["'][^"']*mobile-menu-nav[^"']*["'][^>]*>)([\s\S]*?)(<\/div>)/i,
-        (full, open, inner, close) => {
-          if (/data-cms-extra-menu/i.test(inner)) return full;
-          return `${open}${inner}\n          ${mobileAs}\n        ${close}`;
-        }
-      );
     }
+  }
+
+  if (serviceKids.length) {
+    out = out.replace(
+      /(<div class="nav-drop-panel\b[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/gi,
+      (full, open, inner, close) => {
+        if (
+          !/google-business-profile-setup\.html|remove-negative-reviews\.html|local-seo\.html/i.test(
+            inner
+          )
+        ) {
+          return full;
+        }
+        const mobile = /mobile-link/.test(inner);
+        let count = (inner.match(/class="nav-drop-item/g) || []).length;
+        const extras = [];
+        for (const item of serviceKids) {
+          if (inner.includes(`data-cms-extra-menu="${item.id}"`)) continue;
+          count += 1;
+          const n = String(count).padStart(2, "0");
+          const href = escapeHtml(item.href);
+          const label = escapeHtml(item.label);
+          const id = escapeHtml(item.id);
+          if (mobile) {
+            extras.push(
+              `<a class="nav-drop-item mobile-link" data-cms-extra-menu="${id}" href="${href}"><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${label}</span></a>`
+            );
+          } else {
+            extras.push(
+              `<a class="nav-drop-item" data-cms-extra-menu="${id}" href="${href}"><span class="nav-drop-num">${n}</span><span class="nav-drop-name">${label}</span><span class="nav-drop-arrow">→</span></a>`
+            );
+          }
+        }
+        if (!extras.length) return full;
+        return `${open}${inner}\n                  ${extras.join(
+          "\n                  "
+        )}\n                ${close}`;
+      }
+    );
   }
 
   return out;
 }
 
 function injectFooterMenus(html, items) {
-  if (!items.length) return html;
-  const lis = items
+  const list = normalizeMenuItems(items);
+  const tops = childrenOf(list, null);
+  if (!tops.length) return html;
+
+  const lis = tops
     .map((item) => {
+      const kids = childrenOf(list, item.id);
       const id = escapeHtml(item.id);
-      const href = escapeHtml(normalizeMenuHref(item.href));
+      const href = escapeHtml(item.href);
       const label = escapeHtml(item.label);
-      return `<li data-cms-extra-menu="${id}"><a href="${href}">${label}</a></li>`;
+      if (!kids.length) {
+        return `<li data-cms-extra-menu="${id}"><a href="${href}">${label}</a></li>`;
+      }
+      const nested = kids
+        .map(
+          (k) =>
+            `<li data-cms-extra-menu="${escapeHtml(k.id)}"><a href="${escapeHtml(k.href)}">${escapeHtml(k.label)}</a></li>`
+        )
+        .join("");
+      return `<li data-cms-extra-menu="${id}"><a href="${href}">${label}</a><ul>${nested}</ul></li>`;
     })
     .join("\n            ");
 
   let out = html;
-  // Prefer Company column
   if (/footer-col-title[^>]*>\s*Company\s*</i.test(out)) {
     out = out.replace(
       /(<p\b[^>]*class=["'][^"']*footer-col-title[^"']*["'][^>]*>\s*Company\s*<\/p>\s*<ul\b[^>]*>)([\s\S]*?)(<\/ul>)/i,
@@ -513,7 +625,6 @@ function injectFooterMenus(html, items) {
     return out;
   }
 
-  // Fallback: first footer <ul> that is not ownership
   out = out.replace(
     /(<footer\b[\s\S]*?<ul\b(?![^>]*footer-ownership)[^>]*>)([\s\S]*?)(<\/ul>)/i,
     (full, open, inner, close) => {
@@ -526,14 +637,105 @@ function injectFooterMenus(html, items) {
 }
 
 /**
+ * Normalize CMS customMenus to WordPress shape:
+ * { menus: [{ id, name, items[] }], locations: { primary, footer } }
+ * Migrates legacy { header: [], footer: [] }.
+ */
+export function normalizeCustomMenusDoc(raw) {
+  const m = raw && typeof raw === "object" ? raw : {};
+
+  const normalizeItems = (items) =>
+    (Array.isArray(items) ? items : [])
+      .map((item, index) => {
+        if (!item || typeof item !== "object") return null;
+        let parentId =
+          item.parentId == null || item.parentId === ""
+            ? null
+            : String(item.parentId);
+        if (!parentId && item.placement === "services") parentId = "__services__";
+        return {
+          id: String(item.id || `m_${index}`),
+          label: String(item.label || "").trim() || "Link",
+          href: normalizeMenuHref(item.href || "#"),
+          parentId,
+          order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+          type: item.type === "page" || item.type === "post" ? item.type : "custom",
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.order - b.order);
+
+  if (Array.isArray(m.menus)) {
+    const menus = m.menus
+      .map((menu, index) => {
+        if (!menu || typeof menu !== "object") return null;
+        const id = String(menu.id || `menu_${index}`).slice(0, 80);
+        return {
+          id,
+          name: String(menu.name || "Menu").trim().slice(0, 80) || "Menu",
+          items: normalizeItems(menu.items),
+        };
+      })
+      .filter(Boolean);
+
+    const locIn = m.locations && typeof m.locations === "object" ? m.locations : {};
+    const locations = {
+      primary:
+        locIn.primary != null
+          ? String(locIn.primary)
+          : locIn.header != null
+            ? String(locIn.header)
+            : null,
+      footer: locIn.footer != null ? String(locIn.footer) : null,
+    };
+
+    if (!menus.length) {
+      menus.push(
+        { id: "menu_primary", name: "Primary Menu", items: [] },
+        { id: "menu_footer", name: "Footer Menu", items: [] }
+      );
+      locations.primary = "menu_primary";
+      locations.footer = "menu_footer";
+    }
+
+    const ids = new Set(menus.map((x) => x.id));
+    if (locations.primary && !ids.has(locations.primary)) locations.primary = menus[0].id;
+    if (locations.footer && !ids.has(locations.footer)) locations.footer = null;
+
+    return { menus, locations };
+  }
+
+  // Legacy flat regions
+  const headerItems = normalizeItems(m.header);
+  const footerItems = normalizeItems(m.footer);
+  return {
+    menus: [
+      { id: "menu_primary", name: "Primary Menu", items: headerItems },
+      { id: "menu_footer", name: "Footer Menu", items: footerItems },
+    ],
+    locations: {
+      primary: "menu_primary",
+      footer: "menu_footer",
+    },
+  };
+}
+
+export function itemsForLocation(customMenus, location) {
+  const doc = normalizeCustomMenusDoc(customMenus);
+  const key = location === "footer" ? "footer" : "primary";
+  const menuId = doc.locations[key];
+  if (!menuId) return [];
+  const menu = doc.menus.find((x) => x.id === menuId);
+  return menu ? menu.items : [];
+}
+
+/**
  * Inject user-added navbar/footer menu items (no frontend file edits).
- * customMenus: { header: [{id,label,href}], footer: [...] }
+ * Accepts WP shape or legacy { header, footer }.
  */
 export function injectCustomMenus(html, customMenus) {
-  const menus =
-    customMenus && typeof customMenus === "object" ? customMenus : {};
-  const header = Array.isArray(menus.header) ? menus.header : [];
-  const footer = Array.isArray(menus.footer) ? menus.footer : [];
+  const header = itemsForLocation(customMenus, "primary");
+  const footer = itemsForLocation(customMenus, "footer");
   if (!header.length && !footer.length) {
     return stripInjectedMenus(html);
   }

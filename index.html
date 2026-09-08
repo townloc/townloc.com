@@ -13,15 +13,22 @@
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://townloc.com/" />
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Townloc" />
   <meta property="og:title" content="Local Google Marketing for Local Businesses | Townloc" />
   <meta property="og:description"
     content="Townloc helps local businesses get found, build trust, capture high-intent searches, and turn Google visitors into calls, bookings, enquiries, and customers." />
   <meta property="og:url" content="https://townloc.com/" />
-  <meta property="og:image"
-    content="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&amp;fit=crop&amp;w=1200&amp;q=75" />
+  <meta property="og:image" content="https://townloc.com/assets/images/townloc-og.png?v=1" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Townloc" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Local Google Marketing for Local Businesses | Townloc" />
+  <meta name="twitter:description" content="Townloc helps local businesses get found, build trust, capture high-intent searches, and turn Google visitors into calls, bookings, enquiries, and customers." />
+  <meta name="twitter:image" content="https://townloc.com/assets/images/townloc-og.png?v=1" />
   <link rel="icon"
-    href="/assets/images/townloc-favicon.png" />
+    href="/assets/images/townloc-favicon.png?v=2" />
+  <link rel="apple-touch-icon" href="/assets/images/townloc-favicon.png?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="image" href="assets/images/home/hero-banner.jpg" fetchpriority="high" />
@@ -71,7 +78,7 @@
   <style>
     html {
       scroll-behavior: smooth;
-      scroll-padding-top: 6rem;
+      scroll-padding-top: 4.75rem;
       scrollbar-gutter: stable;
     }
 
@@ -208,6 +215,117 @@
       backdrop-filter: blur(18px) saturate(1.2);
       -webkit-backdrop-filter: blur(18px) saturate(1.2);
       transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+      /* Match body + site.css (padding outside max-w-7xl) */
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+      box-sizing: border-box;
+    }
+    @media (min-width: 1024px) {
+      #site-header {
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+    }
+
+    /* Homepage: same lock as all pages — height + body container */
+    #site-header > nav[aria-label="Primary"] {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 80rem;
+      margin-left: auto;
+      margin-right: auto;
+      height: 4.5rem;
+      min-height: 4.5rem;
+      max-height: 4.5rem;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      align-items: center;
+    }
+    #site-header .site-logo-link {
+      display: inline-flex;
+      align-items: center;
+      height: 2rem;
+      flex-shrink: 0;
+      line-height: 0;
+      opacity: 1 !important;
+    }
+    #site-header .site-logo-header {
+      display: block;
+      height: 2rem;
+      max-height: 2rem;
+      width: auto;
+      max-width: 10.8rem;
+      object-fit: contain;
+      object-position: left center;
+      opacity: 1 !important;
+    }
+    #site-header .header-cta {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      box-sizing: border-box;
+      height: 2.5rem;
+      min-height: 2.5rem;
+      max-height: 2.5rem;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      background: #ffffff;
+      color: #111111;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
+      transform: translateY(0) scale(1);
+      transition:
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #site-header .header-cta::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 45%;
+      height: 100%;
+      background: linear-gradient(
+        100deg,
+        transparent 0%,
+        rgba(17, 17, 17, 0.06) 45%,
+        transparent 100%
+      );
+      transform: translateX(-140%) skewX(-18deg);
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+    #site-header .header-cta:hover {
+      background: #ffffff;
+      color: #111111;
+      opacity: 1;
+      transform: translateY(-3px) scale(1.045);
+      box-shadow:
+        0 10px 28px -10px rgba(255, 255, 255, 0.55),
+        0 6px 16px -8px rgba(0, 0, 0, 0.45);
+    }
+    #site-header .header-cta:hover::before {
+      transform: translateX(280%) skewX(-18deg);
+    }
+    #site-header .header-cta:active {
+      background: #ffffff;
+      color: #111111;
+      transform: translateY(-1px) scale(1.02);
+      box-shadow:
+        0 4px 14px -8px rgba(255, 255, 255, 0.4),
+        0 3px 10px -6px rgba(0, 0, 0, 0.35);
+      transition-duration: 0.15s;
+    }
+    #site-header #menu-btn {
+      box-sizing: border-box;
+      width: 2.5rem;
+      height: 2.5rem;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
     }
 
     #site-header.is-stuck,
@@ -219,7 +337,7 @@
     }
 
     #site-header .header-cta {
-      background: #F5F1E8;
+      background: #ffffff;
       color: #111111;
     }
 
@@ -793,19 +911,36 @@
     }
 
     .hero-banner .btn-primary {
-      background: #F5F1E8;
-      color: #111111;
-      box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.55);
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      box-shadow: none;
+    }
+
+    .hero-banner .btn-primary:hover {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      opacity: 1;
+      transform: translateY(-2px);
+      box-shadow: none;
     }
 
     .hero-banner .btn-secondary {
-      border-color: rgba(245, 241, 232, 0.28);
-      color: #F5F1E8;
-      background: rgba(0, 0, 0, 0.25);
+      background: #ffffff;
+      color: #111111;
+      border: 1.5px solid #ffffff;
+      box-shadow: none;
     }
 
     .hero-banner .btn-secondary:hover {
-      background: rgba(245, 241, 232, 0.1);
+      background: #ffffff;
+      color: #111111;
+      border-color: #ffffff;
+      transform: translateY(-3px) scale(1.045);
+      box-shadow:
+        0 10px 28px -10px rgba(255, 255, 255, 0.55),
+        0 6px 16px -8px rgba(0, 0, 0, 0.45);
     }
 
     /* ≤1211px: image fills full banner behind text/CTAs (not a short top strip) */
@@ -896,17 +1031,28 @@
       justify-content: center;
       border-radius: 9999px;
       background: #111111;
-      color: #F5F1E8;
+      color: #ffffff;
+      border: 1.5px solid #111111;
       padding: 0.875rem 1.75rem;
       font-size: 0.9375rem;
       font-weight: 500;
-      transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
-      box-shadow: 0 16px 40px -20px rgba(17, 17, 17, 0.45);
+      box-shadow: none;
+      transition: transform 0.2s ease;
     }
 
     .btn-primary:hover {
-      opacity: 0.94;
-      box-shadow: 0 18px 44px -18px rgba(17, 17, 17, 0.5);
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      transform: translateY(0);
     }
 
     .btn-secondary {
@@ -914,18 +1060,62 @@
       align-items: center;
       justify-content: center;
       border-radius: 9999px;
-      border: 1px solid rgba(17, 17, 17, 0.18);
-      background: transparent;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      background: #ffffff;
       color: #111111;
+      border: 1.5px solid #111111;
       padding: 0.875rem 1.75rem;
       font-size: 0.9375rem;
       font-weight: 500;
-      transition: border-color 0.25s ease, background 0.25s ease;
+      box-shadow: 0 1px 0 rgba(17, 17, 17, 0.04);
+      transform: translateY(0) scale(1);
+      transition:
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .btn-secondary::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 45%;
+      height: 100%;
+      background: linear-gradient(
+        100deg,
+        transparent 0%,
+        rgba(17, 17, 17, 0.06) 45%,
+        transparent 100%
+      );
+      transform: translateX(-140%) skewX(-18deg);
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
     }
 
     .btn-secondary:hover {
-      border-color: rgba(17, 17, 17, 0.35);
-      background: rgba(17, 17, 17, 0.04);
+      background: #ffffff;
+      color: #111111;
+      border-color: #111111;
+      transform: translateY(-3px) scale(1.045);
+      box-shadow:
+        0 12px 28px -14px rgba(17, 17, 17, 0.35),
+        0 4px 12px -6px rgba(17, 17, 17, 0.18);
+    }
+
+    .btn-secondary:hover::before {
+      transform: translateX(280%) skewX(-18deg);
+    }
+
+    .hero-banner .btn-secondary:hover {
+      background: #ffffff;
+      color: #111111;
+      border-color: #ffffff;
+      transform: translateY(-3px) scale(1.045);
+      box-shadow:
+        0 10px 28px -10px rgba(255, 255, 255, 0.55),
+        0 6px 16px -8px rgba(0, 0, 0, 0.45);
     }
 
     .float-chip {
@@ -1125,21 +1315,28 @@
 
     .footer-top {
       display: grid;
-      gap: 2.5rem;
+      gap: 2rem;
     }
 
     @media (min-width: 768px) {
       .footer-top {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2.5rem;
+        gap: 2rem 1.75rem;
       }
     }
 
     @media (min-width: 1024px) {
       .footer-top {
-        grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
-        gap: 2.5rem;
+        grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr));
+        column-gap: 1.75rem;
+        row-gap: 2rem;
         align-items: start;
+      }
+      .footer-top > .footer-col:nth-child(3) {
+        order: 4;
+      }
+      .footer-top > .footer-col:nth-child(4) {
+        order: 3;
       }
     }
 
@@ -1185,21 +1382,27 @@
     }
 
     .footer-email {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
       margin-top: 1rem;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
+      line-height: 1.3;
       color: #ffffff;
       text-decoration: none;
-      background-image: linear-gradient(currentColor, currentColor);
-      background-position: 0 100%;
-      background-repeat: no-repeat;
-      background-size: 0% 1px;
-      transition: color 0.3s cubic-bezier(0.22, 1, 0.36, 1), background-size 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: opacity 0.25s ease;
+    }
+
+    .footer-email svg {
+      flex-shrink: 0;
+      width: 1rem;
+      height: 1rem;
+      opacity: 0.9;
     }
 
     .footer-email:hover {
       color: #ffffff;
-      background-size: 100% 1px;
+      opacity: 0.85;
     }
 
     .footer-nav {
@@ -1217,18 +1420,19 @@
 
     .footer-ownership {
       list-style: none;
-      padding: 0;
       margin: 0.85rem 0 0;
+      display: flex;
+      flex-direction: column;
     }
 
     .footer-ownership li {
       font-size: 0.875rem;
-      line-height: 1.65;
+      line-height: 1.55;
       color: #ffffff;
     }
 
     .footer-ownership li+li {
-      margin-top: 0.35rem;
+      margin-top: 0;
     }
 
     .footer-col-title {
@@ -1246,6 +1450,15 @@
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
+    }
+
+    .footer-col ul.footer-ownership {
+      padding: 0.95rem 1.15rem;
+      gap: 0.55rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.045);
+      box-sizing: border-box;
     }
 
     .footer-col a {
@@ -1275,6 +1488,18 @@
       opacity: 0.55;
     }
 
+    .footer-col a.footer-logo-link,
+    .footer-col a.footer-logo-link:hover,
+    .footer-col a.footer-logo-link:focus {
+      text-decoration: none !important;
+      transform: none !important;
+    }
+
+    .footer-col a.footer-logo-link::after {
+      content: none !important;
+      display: none !important;
+    }
+
     .footer-col a:hover,
     .footer-col a[aria-current="page"] {
       color: #ffffff;
@@ -1288,7 +1513,7 @@
     }
 
     .footer-guarantee {
-      margin-top: 2.5rem;
+      margin-top: 1.75rem;
       border-radius: 1.25rem;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(255, 255, 255, 0.05);
@@ -1328,8 +1553,8 @@
     }
 
     .footer-bottom {
-      margin-top: 2rem;
-      padding-top: 1.35rem;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
@@ -1351,31 +1576,39 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
+      border-radius: 9999px;
+      padding: 0.55rem 1.15rem;
       font-size: 0.8125rem;
-      font-weight: 400;
+      font-weight: 500;
       color: #ffffff;
+      background: #111111;
+      border: 1.5px solid #111111;
+      text-decoration: none;
+      box-shadow: none;
       transition:
-        color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
     }
 
     .footer-cta::after {
       content: "→";
       display: inline-block;
-      opacity: 0.55;
-      transition:
-        opacity 0.3s ease,
-        transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      opacity: 0.75;
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
     .footer-cta:hover {
+      background: #000000;
       color: #ffffff;
-      transform: translateX(3px);
+      border-color: #000000;
+      transform: translateY(-2px);
     }
 
     .footer-cta:hover::after {
       opacity: 1;
-      transform: translateX(4px);
+      transform: translateX(3px);
     }
 
     .journey-flow {
@@ -2256,14 +2489,12 @@
       color: #ffffff !important;
     }
 
-    .footer-email,
-    .footer-cta {
+    .footer-email {
       font-size: 0.875rem !important;
       color: #ffffff !important;
     }
 
-    .footer-email:hover,
-    .footer-cta:hover {
+    .footer-email:hover {
       color: #ffffff !important;
     }
 
@@ -2420,6 +2651,8 @@
     "@type": "ProfessionalService",
     "name": "Townloc",
     "url": "https://townloc.com/",
+    "logo": "https://townloc.com/assets/images/townloc-logo.png",
+    "image": "https://townloc.com/assets/images/townloc-og.png?v=1",
     "description": "Google Business Profile, Google Reviews, Google Ads, Website Building, Local SEO, and Remove Negative Reviews for local businesses.",
     "areaServed": "United States",
     "email": "hello@townloc.com",
@@ -2434,6 +2667,22 @@
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Local SEO", "url": "https://townloc.com/services/local-seo.html" } },
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Remove Negative Reviews", "url": "https://townloc.com/services/remove-negative-reviews.html" } }
       ]
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Townloc",
+    "url": "https://townloc.com/",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Townloc",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://townloc.com/assets/images/townloc-logo.png"
+      }
     }
   }
   </script>
@@ -2465,6 +2714,7 @@
     ]
   }
   </script>
+  <link rel="stylesheet" href="assets/site.css?v=21" />
 </head>
 
 <body class="bg-paper text-ink antialiased">
@@ -2474,11 +2724,9 @@
     to content</a>
 
   <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-white/10 text-paper">
-    <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8" aria-label="Primary">
-      <a href="index.html" class="flex items-center gap-2.5 transition-all duration-300 ease-in-out hover:opacity-90">
-        <span data-cms="brand.mark"
-          class="header-mark grid h-8 w-8 place-items-center rounded-lg bg-paper text-[11px] font-semibold tracking-wide text-ink">N</span>
-        <span data-cms="brand.name" class="text-[15px] font-semibold tracking-tight">Townloc</span>
+    <nav class="mx-auto flex w-full max-w-7xl items-center justify-between" aria-label="Primary">
+      <a href="index.html" class="site-logo-link flex items-center" aria-label="Townloc home">
+        <img class="site-logo site-logo-header" src="assets/images/townloc-logo.png?v=3" alt="Townloc" width="144" height="32" decoding="async" />
       </a>
       <ul class="hidden items-center gap-8 text-sm md:flex">
         <li class="nav-drop relative">
@@ -2518,7 +2766,7 @@
       </ul>
       <div class="flex items-center gap-3">
         <a href="#contact" data-cms="header.ctaText"
-          class="header-cta hidden rounded-full bg-paper px-4 py-2 text-sm font-medium text-ink transition-all duration-300 ease-in-out hover:scale-[1.03] hover:opacity-90 md:inline-flex">Get
+          class="header-cta hidden rounded-full bg-white text-ink px-4 py-2 text-sm font-medium md:inline-flex">Get
           Started</a>
         <button id="menu-btn"
           class="grid h-10 w-10 place-items-center rounded-full border border-white/20 transition-all duration-300 ease-in-out md:hidden"
@@ -3057,7 +3305,7 @@
         </div>
         <div class="reveal mt-10">
           <a href="#contact"
-            class="inline-flex rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90">Get
+            class="btn-primary">Get
             My Free Assessment</a>
         </div>
       </div>
@@ -3385,9 +3633,18 @@
     <div class="mx-auto max-w-7xl">
       <div class="footer-top">
         <div class="footer-col">
-          <p class="footer-col-title" data-cms="footer.brandTitle">Townloc</p>
+          <a href="index.html" class="footer-logo-link site-logo-link" aria-label="Townloc home">
+            <img class="site-logo site-logo-footer" src="assets/images/townloc-logo.png?v=3" alt="Townloc" width="155" height="36" decoding="async" />
+          </a>
           <p class="footer-tagline" data-cms="footer.tagline">Local Google marketing for businesses that already do good work — Google Business
             Profile, reviews, ads, and websites you own.</p>
+          <a class="footer-email" href="mailto:hello@townloc.com">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5v-9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 8l7.5 5 7.5-5" />
+            </svg>
+            <span data-cms="footer.email">hello@townloc.com</span>
+          </a>
         </div>
         <div class="footer-col">
           <p class="footer-col-title">Services</p>
@@ -3401,20 +3658,22 @@
           </ul>
         </div>
         <div class="footer-col">
+          <p class="footer-col-title">Ownership</p>
+          <ul class="footer-ownership">
+            <li data-cms="footer.ownership1">You own your website.</li>
+            <li data-cms="footer.ownership2">You keep your accounts.</li>
+            <li data-cms="footer.ownership3">Transparent work.</li>
+          </ul>
+        </div>
+        <div class="footer-col">
           <p class="footer-col-title">Company</p>
           <ul>
             <li><a href="#work">Work</a></li>
             <li><a href="blog/index.html">Blog</a></li>
             <li><a href="#faq">FAQ</a></li>
             <li><a href="#trust">About</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <p class="footer-col-title">Ownership</p>
-          <ul class="footer-ownership">
-            <li data-cms="footer.ownership1">You own your website.</li>
-            <li data-cms="footer.ownership2">You keep your accounts.</li>
-            <li data-cms="footer.ownership3">Transparent work.</li>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
           </ul>
         </div>
       </div>
@@ -3437,7 +3696,7 @@
     <p class="mt-4 text-sm leading-relaxed text-ink/70">Townloc collects only what you type into the contract form.
       That data is used to reply. It is not sold. Email hello@townloc.com to remove a record.</p>
     <form method="dialog" class="mt-6"><button
-        class="rounded-full bg-ink px-5 py-2 text-sm text-paper transition-all duration-300 ease-in-out hover:opacity-90">Close</button>
+        class="btn-secondary">Close</button>
     </form>
   </dialog>
   <dialog id="terms"
@@ -3448,7 +3707,7 @@
       covers authentic customer feedback only. Web projects include full access and source-code ownership. Cloudflare
       hosting and SSL are set up at no extra fee. Domain registration is paid by the client.</p>
     <form method="dialog" class="mt-6"><button
-        class="rounded-full bg-ink px-5 py-2 text-sm text-paper transition-all duration-300 ease-in-out hover:opacity-90">Close</button>
+        class="btn-secondary">Close</button>
     </form>
   </dialog>
 
