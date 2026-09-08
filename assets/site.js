@@ -226,6 +226,7 @@
   });
 
   if ("IntersectionObserver" in window) {
+    var reveals = document.querySelectorAll(".reveal");
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry, i) {
         if (!entry.isIntersecting) return;
@@ -236,9 +237,23 @@
         io.unobserve(entry.target);
       });
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-    document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    reveals.forEach(function (el) {
+      var rect = el.getBoundingClientRect();
+      // Already on-screen: show immediately (no pending hide → no refresh blink)
+      if (rect.top < vh * 0.92 && rect.bottom > 0) {
+        el.classList.add("in");
+        return;
+      }
+      // Below fold: hide then animate in on scroll (matches site.css .reveal-pending)
+      el.classList.add("reveal-pending");
+      io.observe(el);
+    });
   } else {
-    document.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("in"); });
+    document.querySelectorAll(".reveal").forEach(function (el) {
+      el.classList.add("in");
+    });
   }
 
   var backToTop = document.createElement("button");
