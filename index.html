@@ -1365,6 +1365,13 @@
       gap: 2rem;
     }
 
+    @media (max-width: 1023px) {
+      .footer-top>.footer-col:nth-child(1) { order: 1; }
+      .footer-top>.footer-col:nth-child(2) { order: 2; }
+      .footer-top>.footer-col:nth-child(3) { order: 4; }
+      .footer-top>.footer-col:nth-child(4) { order: 3; }
+    }
+
     @media (min-width: 768px) {
       .footer-top {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1654,6 +1661,16 @@
       gap: 1rem;
       font-size: 0.8125rem;
       color: #ffffff;
+    }
+
+    @media (max-width: 499px) {
+      .footer-bottom {
+        justify-content: center;
+        text-align: center;
+      }
+      .footer-bottom .footer-cta {
+        display: none !important;
+      }
     }
 
     .footer-cta {
@@ -2810,7 +2827,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="assets/site.css?v=59" />
+  <link rel="stylesheet" href="assets/site.css?v=61" />
 </head>
 
 <body class="bg-paper text-ink antialiased">

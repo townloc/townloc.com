@@ -922,6 +922,21 @@ html.is-navigating .nav-drop-menu {
   display: grid;
   gap: 2rem;
 }
+/* Mobile/tablet: Company above Contact (desktop keeps its own order rules) */
+@media (max-width: 1023px) {
+  .footer-top > .footer-col:nth-child(1) {
+    order: 1;
+  }
+  .footer-top > .footer-col:nth-child(2) {
+    order: 2;
+  }
+  .footer-top > .footer-col:nth-child(3) {
+    order: 4; /* Contact */
+  }
+  .footer-top > .footer-col:nth-child(4) {
+    order: 3; /* Company */
+  }
+}
 @media (min-width: 768px) {
   .footer-top {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1180,6 +1195,15 @@ html.is-navigating .nav-drop-menu {
   .footer-bottom {
     padding-left: max(2rem, calc((100vw - 80rem) / 2));
     padding-right: max(2rem, calc((100vw - 80rem) / 2));
+  }
+}
+@media (max-width: 499px) {
+  .footer-bottom {
+    justify-content: center;
+    text-align: center;
+  }
+  .footer-bottom .footer-cta {
+    display: none !important;
   }
 }
 /* .footer-cta styles live with the button system below */
