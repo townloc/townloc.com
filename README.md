@@ -1,4 +1,4 @@
-# Townloc Website ù Full Setup Playbook
+# Townloc Website ‚Äî Full Setup Playbook
 
 **Live site:** https://townloc.com/  
 **API:** https://townloc.com/api  
@@ -19,10 +19,10 @@ You may have more than one account on the same PC. Use the right one:
 | Task | Account / place | How to check / switch |
 |------|-----------------|------------------------|
 | `git push` to `townloc/townloc.com` | GitHub user **`townloc`** (must have write access) | `gh auth status` then `gh auth switch` |
-| Old personal repos (if any) | GitHub user **`ShamratX`** | Same ù switch only when needed |
+| Old personal repos (if any) | GitHub user **`ShamratX`** | Same ‚Äî switch only when needed |
 | Create DB, secrets, deploy Worker | Cloudflare account that owns **`townloc.com`** | `npx wrangler login` (browser approve) |
 | Resend API key | Your Resend dashboard | Copy key; do not put it in git files |
-| Email receive (inbox) | Zoho (or your mail host) DNS already on domain | Keep MX / TXT ù do not delete |
+| Email receive (inbox) | Zoho (or your mail host) DNS already on domain | Keep MX / TXT ‚Äî do not delete |
 
 ### GitHub two accounts on one PC
 
@@ -48,10 +48,10 @@ Browser opens ? approve with the Cloudflare account that has domain `townloc.com
 
 ## Golden rules
 
-1. **Worker only** ù site + API = one Worker (`townloc`). No Pages.
-2. **Git push ? live site** ù push only updates GitHub. Live site needs `npm run deploy`.
-3. **Secrets never in git** ù use `wrangler secret put`, not `.env` committed to repo.
-4. **One project = one D1 database** ù do not reuse another siteùs DB id.
+1. **Worker only** ‚Äî site + API = one Worker (`townloc`). No Pages.
+2. **Git push ? live site** ‚Äî push only updates GitHub. Live site needs `npm run deploy`.
+3. **Secrets never in git** ‚Äî use `wrangler secret put`, not `.env` committed to repo.
+4. **One project = one D1 database** ‚Äî do not reuse another site‚Äîs DB id.
 5. **Do not delete Zoho/Resend DNS** (MX, SPF, DKIM TXT) when fixing Pages conflict.
 
 ---
@@ -222,7 +222,7 @@ Temporary URL (always works even if domain fails):
 
 ---
 
-## What we learned ù do NOT do this
+## What we learned ‚Äî do NOT do this
 
 | Mistake | What happens |
 |---------|----------------|

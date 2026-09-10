@@ -1,0 +1,22 @@
+---
+description: Keep all site text files valid UTF-8 (no BOM); never mangle — · ©
+alwaysApply: true
+---
+
+# UTF-8 encoding (mandatory)
+
+This repo’s HTML/CSS/MD breaks when tools rewrite files with the wrong encoding.
+Broken files show `` or bytes like `0x9d` / `0x97` instead of `—`, `·`, `©`, `’`.
+
+## Rules for every edit
+
+1. **Always read/write text as UTF-8 without BOM.** Prefer Python:
+   `Path.read_text(encoding="utf-8")` / `Path.write_text(..., encoding="utf-8", newline="\n")`.
+2. **Never use PowerShell `Set-Content` / `Out-File`** on `index.html` or other site HTML (they often add BOM or corrupt Unicode).
+3. **Never open-save HTML through tools that assume Windows-1252 / ANSI.**
+4. After bulk HTML/CSS edits, run: `python scripts/ensure-utf8.py`
+5. If a file fails UTF-8 decode, repair with that script — do **not** `git checkout` unless the user asks (it can wipe uncommitted work).
+
+## Highest-risk file
+
+- `index.html` — large, many `—` / `·` / `©` characters. Patch via UTF-8-safe Python only.
