@@ -2532,15 +2532,16 @@ main h2.svc-section-title,
 .footer-subscribe-row {
   display: flex;
   align-items: stretch;
-  gap: 0.45rem;
+  gap: 0;
   position: relative;
   width: 100%;
 }
 .footer-subscribe-input {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 0.65rem 0.85rem;
+  padding: calc(0.65rem - 1px) 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.28);
+  border-right: 0;
   border-radius: 0;
   background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
@@ -2563,7 +2564,8 @@ main h2.svc-section-title,
 .footer-subscribe-btn {
   flex: 0 0 auto;
   white-space: nowrap;
-  padding: 0.65rem 1rem;
+  margin-left: 0;
+  padding: calc(0.65rem - 1px) 1rem;
   border: 1px solid #ffffff;
   border-radius: 0;
   background: #ffffff;

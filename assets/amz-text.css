@@ -534,8 +534,18 @@ main section:not(.hero-banner) h2.section-heading {
 .footer-subscribe-row {
   display: flex !important;
   align-items: stretch !important;
-  gap: 0.45rem !important;
+  gap: 0 !important;
   position: relative !important;
+}
+.footer-subscribe-input {
+  border-right: 0 !important;
+  padding-top: calc(0.65rem - 1px) !important;
+  padding-bottom: calc(0.65rem - 1px) !important;
+}
+.footer-subscribe-btn {
+  margin-left: 0 !important;
+  padding-top: calc(0.65rem - 1px) !important;
+  padding-bottom: calc(0.65rem - 1px) !important;
 }
 .footer-subscribe-hp,
 .site-footer .footer-subscribe-hp {
