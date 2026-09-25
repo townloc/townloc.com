@@ -327,6 +327,7 @@
     if (mobileMenu) {
       mobileMenu.classList.remove("is-open");
       mobileMenu.setAttribute("aria-hidden", "true");
+      mobileMenu.style.display = "none";
     }
     if (menuBtn) {
       menuBtn.setAttribute("aria-expanded", "false");
@@ -337,8 +338,14 @@
     setServicesOpen(false);
   }
 
+  window.addEventListener("pageshow", function () {
+    document.documentElement.classList.remove("is-navigating");
+    if (mobileMenu) mobileMenu.style.display = "";
+  });
+
   if (menuBtn && mobileMenu) {
     menuBtn.addEventListener("click", function () {
+      if (mobileMenu.style.display === "none") mobileMenu.style.display = "";
       setMobileOpen(!mobileMenu.classList.contains("is-open"));
     });
   }

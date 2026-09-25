@@ -601,7 +601,10 @@ html.nav-locked {
 
 /* Skip menu close animation when leaving for another page */
 html.is-navigating #mobile-menu,
+html.is-navigating #site-header #mobile-menu,
 html.is-navigating #mobile-menu .mobile-menu-item,
+html.is-navigating #site-header #mobile-menu a,
+html.is-navigating #site-header #mobile-menu .mobile-services-btn,
 html.is-navigating .mobile-services,
 html.is-navigating .mobile-services-caret,
 html.is-navigating .nav-drop-menu,
@@ -610,11 +613,13 @@ html.is-navigating #menu-btn svg {
   transition: none !important;
   animation: none !important;
 }
-html.is-navigating #mobile-menu {
+html.is-navigating #mobile-menu,
+html.is-navigating #site-header #mobile-menu {
+  display: none !important;
   opacity: 0 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-  grid-template-rows: 1fr !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  grid-template-rows: 0fr !important;
 }
 html.is-navigating .nav-drop-menu {
   opacity: 0 !important;
@@ -665,6 +670,9 @@ html.is-navigating .nav-drop-menu {
   visibility: visible;
   pointer-events: auto;
   border-top-color: rgba(255, 255, 255, 0.12);
+}
+#mobile-menu:not(.is-open) .mobile-menu-nav {
+  visibility: hidden;
 }
 #mobile-menu .mobile-menu-inner {
   overflow: hidden;
@@ -1972,7 +1980,11 @@ main section h2.svc-section-title {
 #site-header #mobile-menu .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
 #site-header #mobile-menu a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
   color: #ffffff !important;
-  opacity: 1 !important;
+}
+#site-header #mobile-menu.is-open .mobile-services-btn,
+#site-header #mobile-menu.is-open .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
+#site-header #mobile-menu.is-open a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
+  opacity: 1;
 }
 
 #site-header #mobile-menu .mobile-services-btn,

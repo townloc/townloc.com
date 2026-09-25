@@ -112,7 +112,7 @@
       text-transform: uppercase !important;
     }
   </style>
-  <link rel="stylesheet" href="assets/site.css?v=139" />
+  <link rel="stylesheet" href="assets/site.css?v=140" />
   <link rel="stylesheet" href="assets/tailwind.min.css?v=1" />
   <script>document.documentElement.classList.add("js");</script>
   <script>
@@ -445,7 +445,10 @@
     }
 
     html.is-navigating #mobile-menu,
+    html.is-navigating #site-header #mobile-menu,
     html.is-navigating #mobile-menu .mobile-menu-item,
+    html.is-navigating #site-header #mobile-menu a,
+    html.is-navigating #site-header #mobile-menu .mobile-services-btn,
     html.is-navigating .mobile-services,
     html.is-navigating .mobile-services-caret,
     html.is-navigating .nav-drop-menu,
@@ -455,11 +458,13 @@
       animation: none !important;
     }
 
-    html.is-navigating #mobile-menu {
+    html.is-navigating #mobile-menu,
+    html.is-navigating #site-header #mobile-menu {
+      display: none !important;
       opacity: 0 !important;
-      visibility: visible !important;
-      pointer-events: auto !important;
-      grid-template-rows: 1fr !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      grid-template-rows: 0fr !important;
     }
 
     html.is-navigating .nav-drop-menu {
@@ -507,6 +512,9 @@
       visibility: visible;
       pointer-events: auto;
       border-top-color: rgba(255, 255, 255, 0.12);
+    }
+    #mobile-menu:not(.is-open) .mobile-menu-nav {
+      visibility: hidden;
     }
 
     #mobile-menu .mobile-menu-inner {
@@ -2876,7 +2884,12 @@
     #site-header #mobile-menu .mobile-services-btn,
     #site-header #mobile-menu a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
       color: #ffffff !important;
-      opacity: 1 !important;
+    }
+
+    #site-header #mobile-menu.is-open .mobile-services-btn,
+    #site-header #mobile-menu.is-open .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
+    #site-header #mobile-menu.is-open a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
+      opacity: 1;
     }
 
     #site-header #mobile-menu .mobile-services-btn,
@@ -4167,7 +4180,7 @@
     <span class="live-support-wa-text">Live Support</span>
   </a>
 
-  <script src="assets/site.js?v=29" defer></script>
+  <script src="assets/site.js?v=30" defer></script>
   <script src="assets/cms.js" defer></script>
 </body>
 
