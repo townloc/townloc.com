@@ -8,6 +8,7 @@
   src: url("/assets/fonts/opensans-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
 @font-face {
   font-family: "Open Sans Fallback";
   font-style: normal;
@@ -18,6 +19,7 @@
   line-gap-override: 0%;
   size-adjust: 98%;
 }
+
 @font-face {
   font-family: Rajdhani;
   font-style: normal;
@@ -25,6 +27,7 @@
   font-display: swap;
   src: url("/assets/fonts/rajdhani-400-latin.woff2") format("woff2");
 }
+
 @font-face {
   font-family: Rajdhani;
   font-style: normal;
@@ -32,6 +35,7 @@
   font-display: swap;
   src: url("/assets/fonts/rajdhani-600-latin.woff2") format("woff2");
 }
+
 @font-face {
   font-family: Rajdhani;
   font-style: normal;
@@ -39,6 +43,7 @@
   font-display: swap;
   src: url("/assets/fonts/rajdhani-700-latin.woff2") format("woff2");
 }
+
 @font-face {
   font-family: "Rajdhani Fallback";
   font-style: normal;
@@ -46,6 +51,7 @@
   src: local("Arial Narrow"), local("Arial"), local("Helvetica");
   size-adjust: 105%;
 }
+
 @font-face {
   font-family: "Josefin Sans";
   font-style: normal;
@@ -53,6 +59,7 @@
   font-display: swap;
   src: url("/assets/fonts/josefin-400-latin.woff2") format("woff2");
 }
+
 @font-face {
   font-family: "Josefin Sans";
   font-style: normal;
@@ -60,6 +67,7 @@
   font-display: swap;
   src: url("/assets/fonts/josefin-600-latin.woff2") format("woff2");
 }
+
 @font-face {
   font-family: "Josefin Sans";
   font-style: normal;
@@ -67,6 +75,7 @@
   font-display: swap;
   src: url("/assets/fonts/josefin-700-latin.woff2") format("woff2");
 }
+
 @font-face {
   font-family: "Josefin Fallback";
   font-style: normal;
@@ -95,27 +104,72 @@ body {
 }
 
 /* Tailwind ink utilities were still #111 — remap to soft grays */
-.text-ink { color: var(--amz-heading) !important; }
-.text-ink\/25 { color: #9a9a9a !important; }
-.text-ink\/30 { color: #8e8e8e !important; }
-.text-ink\/35 { color: #858585 !important; }
+.text-ink {
+  color: var(--amz-heading) !important;
+}
+
+.text-ink\/25 {
+  color: #9a9a9a !important;
+}
+
+.text-ink\/30 {
+  color: #8e8e8e !important;
+}
+
+.text-ink\/35 {
+  color: #858585 !important;
+}
+
 .text-ink\/40,
-.text-ink\/45 { color: var(--amz-body) !important; }
-.text-ink\/50 { color: #6e6e6e !important; }
+.text-ink\/45 {
+  color: var(--amz-body) !important;
+}
+
+.text-ink\/50 {
+  color: #6e6e6e !important;
+}
+
 .text-ink\/55,
-.text-ink\/60 { color: var(--amz-body) !important; }
-.text-ink\/65 { color: var(--amz-secondary) !important; }
+.text-ink\/60 {
+  color: var(--amz-body) !important;
+}
+
+.text-ink\/65 {
+  color: var(--amz-secondary) !important;
+}
+
 .text-ink\/70,
 .text-ink\/75,
-.text-ink\/80 { color: var(--amz-strong) !important; }
-.text-ink\/90 { color: var(--amz-heading) !important; }
+.text-ink\/80 {
+  color: var(--amz-strong) !important;
+}
 
-.text-muted { color: var(--amz-muted) !important; }
-.text-black\/45 { color: var(--amz-muted) !important; }
-.text-black\/55 { color: var(--amz-body) !important; }
-.text-black\/60 { color: var(--amz-secondary) !important; }
+.text-ink\/90 {
+  color: var(--amz-heading) !important;
+}
 
-main h1, main h2, main h3, main h4, main h5, main h6,
+.text-muted {
+  color: var(--amz-muted) !important;
+}
+
+.text-black\/45 {
+  color: var(--amz-muted) !important;
+}
+
+.text-black\/55 {
+  color: var(--amz-body) !important;
+}
+
+.text-black\/60 {
+  color: var(--amz-secondary) !important;
+}
+
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6,
 .font-serif,
 .section-heading,
 .svc-hero-title,
@@ -132,24 +186,30 @@ main .body-lg,
 main .svc-lead {
   color: var(--amz-body);
 }
+
 main p.text-muted,
 main .text-muted,
 main p.leading-relaxed {
   color: #3a3a3a !important;
 }
 
-#trust-strip .trust-badge p.text-sm { color: var(--amz-heading) !important; }
-#trust-strip .trust-badge p.text-xs { color: var(--amz-body) !important; }
+#trust-strip .trust-badge p.text-sm {
+  color: var(--amz-heading) !important;
+}
+
+#trust-strip .trust-badge p.text-xs {
+  color: var(--amz-body) !important;
+}
 
 main .text-xs.uppercase,
 main p.text-xs.font-medium.uppercase {
   color: var(--amz-secondary) !important;
 }
 
-#contract-form label > span.font-medium,
-#contact label > span.font-medium,
-#contract-form label > span:not(.text-xs),
-#contact label > span:not(.text-xs) {
+#contract-form label>span.font-medium,
+#contact label>span.font-medium,
+#contract-form label>span:not(.text-xs),
+#contact label>span:not(.text-xs) {
   font-size: 14px !important;
   font-weight: 400 !important;
   line-height: 1.4 !important;
@@ -169,8 +229,14 @@ main p.text-xs.font-medium.uppercase {
 }
 
 /* Dark hero — keep light text */
-.hero-banner .hero-title { color: #F5F1E8 !important; }
-.hero-banner .hero-lead { color: #ffffff !important; }
+.hero-banner .hero-title {
+  color: #F5F1E8 !important;
+}
+
+.hero-banner .hero-lead {
+  color: #ffffff !important;
+}
+
 .hero-banner .hero-eyebrow {
   color: #ffffff !important;
   font-family: Rajdhani, "Rajdhani Fallback", system-ui, sans-serif !important;
@@ -200,16 +266,16 @@ main p.text-xs.font-medium.uppercase {
   --amz-menu-hover: #111111;
 }
 
-/* Services dropdown — match dark navbar (font-size untouched) */
+/* Services dropdown — white bg panel, black text */
 .nav-drop-item,
 #site-header .nav-drop-item {
-  color: #ffffff !important;
+  color: #111111 !important;
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
 }
 
 .nav-drop-name,
 #site-header .nav-drop-name {
-  color: #ffffff !important;
+  color: #111111 !important;
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   font-weight: 400 !important;
   letter-spacing: 0.02em !important;
@@ -219,38 +285,59 @@ main p.text-xs.font-medium.uppercase {
 .nav-drop-item:focus-visible,
 #site-header .nav-drop-menu .nav-drop-item:hover,
 #site-header .nav-drop-menu .nav-drop-item:focus-visible {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  background: rgba(17, 17, 17, 0.06) !important;
+  color: #111111 !important;
 }
 
 .nav-drop-item:hover .nav-drop-name,
 .nav-drop-item:focus-visible .nav-drop-name,
 #site-header .nav-drop-menu .nav-drop-item:hover .nav-drop-name,
 #site-header .nav-drop-menu .nav-drop-item:focus-visible .nav-drop-name {
-  color: #ffffff !important;
+  color: #111111 !important;
 }
 
 /* Mobile services panel — black like menu, white text */
+#mobile-menu .mobile-services.is-open {
+  margin-bottom: 0 !important;
+}
+
 #mobile-menu .mobile-services .nav-drop-panel {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
 }
+
+#mobile-menu .mobile-services .nav-drop-item:last-child {
+  padding-bottom: 0.35rem !important;
+}
+
+/* Mobile menu main items — match desktop nav font */
+#mobile-menu .mobile-services-btn,
+#mobile-menu .mobile-link:not(.nav-drop-item) {
+  font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+}
+
 #mobile-menu .nav-drop-item,
 #mobile-menu .nav-drop-name {
-  color: #ffffff !important;
+  color: #111111 !important;
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   font-weight: 400 !important;
   letter-spacing: 0.02em !important;
 }
+
 #mobile-menu .nav-drop-item:hover,
 #mobile-menu .nav-drop-item:focus-visible {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  background: rgba(17, 17, 17, 0.06) !important;
+  color: #111111 !important;
 }
+
 #mobile-menu .nav-drop-item:hover .nav-drop-name,
 #mobile-menu .nav-drop-item:focus-visible .nav-drop-name {
-  color: #ffffff !important;
+  color: #111111 !important;
 }
 
 .nav-drop-item:hover .nav-drop-arrow,
@@ -261,7 +348,7 @@ main p.text-xs.font-medium.uppercase {
   opacity: 1 !important;
 }
 
-/* Top nav labels — Rajdhani 600 like amzgetway (keep white on dark header) */
+/* Top nav labels — Rajdhani 600; black text on white navbar */
 #site-header .nav-link,
 #site-header .nav-drop-btn,
 #site-header .nav-drop-btn span {
@@ -269,6 +356,7 @@ main p.text-xs.font-medium.uppercase {
   font-weight: 600 !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
+  color: #111111 !important;
 }
 
 /* =========================================================
@@ -276,7 +364,10 @@ main p.text-xs.font-medium.uppercase {
    ========================================================= */
 
 /* Headlines (light sections) */
-main h1, main h2, main h3, main h4,
+main h1,
+main h2,
+main h3,
+main h4,
 .font-serif,
 .section-heading,
 .svc-section-title,
@@ -291,7 +382,9 @@ main h1, main h2, main h3, main h4,
   line-height: 1.3 !important;
   letter-spacing: normal !important;
 }
-main h5, main h6 {
+
+main h5,
+main h6 {
   font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
   font-weight: 500 !important;
   color: #121212 !important;
@@ -307,6 +400,7 @@ main h5, main h6 {
   max-width: 17.4em;
   line-height: 1.14 !important;
 }
+
 .hero-banner .hero-lead {
   color: #ffffff !important;
 }
@@ -316,10 +410,12 @@ main h5, main h6 {
   background: #313743 !important;
   color: #ffffff !important;
 }
+
 .footer-bottom,
 .site-footer .footer-bottom {
   background: #363636 !important;
 }
+
 .footer-logo,
 .footer-mark,
 .footer-col-title,
@@ -330,10 +426,12 @@ main h5, main h6 {
 .footer-ownership li {
   color: #ffffff !important;
 }
+
 .footer-logo {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   font-weight: 500 !important;
 }
+
 .footer-col-title,
 .footer-guarantee-label {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
@@ -341,18 +439,21 @@ main h5, main h6 {
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
+
 .footer-col a,
 .footer-contact a.footer-contact-link,
 .site-footer a:not(.btn-primary):not(.btn-secondary) {
   color: #ffffff !important;
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
 }
+
 .footer-col a:hover,
 .footer-col a[aria-current="page"],
 .footer-contact a.footer-contact-link:hover,
 .site-footer a:hover:not(.btn-primary):not(.btn-secondary) {
   color: #FFFFFF !important;
 }
+
 .footer-tagline,
 .footer-ownership li,
 .footer-guarantee-text {
@@ -366,6 +467,7 @@ main h5, main h6 {
   font-weight: 600 !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
+  font-size: 1rem !important;
 }
 
 /* Services dropdown — auto width like amzgetway (longest label wins) */
@@ -375,20 +477,25 @@ main h5, main h6 {
   width: max-content !important;
   max-width: min(100vw - 2rem, 28rem) !important;
 }
+
 #site-header .nav-drop-menu .nav-drop-panel {
   width: max-content !important;
   max-width: 100% !important;
   border-radius: 1.15rem !important;
-  background: #1c1c1c !important;
+  background: #fff !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     inset 0 -1px 0 rgba(0, 0, 0, 0.45),
     0 12px 28px -14px rgba(0, 0, 0, 0.65) !important;
 }
+
 #site-header .nav-drop-menu .nav-drop-item,
 #site-header .nav-drop-menu .nav-drop-name {
   white-space: nowrap !important;
+  text-shadow: 0.1px 0 0 #111111, -0.1px 0 0 #111111 !important;
+  will-change: transform, text-shadow !important;
+  -webkit-font-smoothing: antialiased !important;
 }
 
 /* Mobile services list — full-width hover row */
@@ -396,6 +503,7 @@ main h5, main h6 {
   width: 100% !important;
   max-width: 100% !important;
 }
+
 #mobile-menu .mobile-services .nav-drop-item {
   display: flex !important;
   width: 100% !important;
@@ -403,11 +511,13 @@ main h5, main h6 {
   box-sizing: border-box !important;
   white-space: normal !important;
 }
+
 #mobile-menu .mobile-services .nav-drop-name {
   flex: 1 1 auto !important;
   white-space: normal !important;
 }
-#mobile-menu .mobile-services .nav-drop-item + .nav-drop-item {
+
+#mobile-menu .mobile-services .nav-drop-item+.nav-drop-item {
   border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -439,16 +549,19 @@ main h5, main h6 {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   color: #ffffff !important;
 }
+
 .site-footer .footer-bottom,
 .footer-bottom {
   background: #363636 !important;
 }
+
 .site-footer .footer-col-title {
   font-size: 20px !important;
   font-weight: 600 !important;
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
+
 .site-footer .footer-col a,
 .footer-col a,
 .site-footer .footer-contact a.footer-contact-link,
@@ -456,14 +569,17 @@ main h5, main h6 {
   font-size: 1rem !important;
   font-weight: 400 !important;
 }
+
 .site-footer .footer-guarantee-label {
   font-weight: 500 !important;
 }
+
 .site-footer .footer-guarantee-text,
 .site-footer .footer-tagline,
 .site-footer .footer-ownership li {
   font-weight: 400 !important;
 }
+
 .site-footer a:hover,
 .footer-col a:hover,
 .footer-col a[aria-current="page"],
@@ -475,8 +591,9 @@ main h5, main h6 {
 #site-header .nav-drop-name,
 .nav-drop-name,
 #mobile-menu .nav-drop-name {
-  font-size: 0.9375rem !important;
+  font-size: 0.99rem !important;
 }
+
 .hero-banner .hero-lead,
 .hero-lead {
   font-size: 15px !important;
@@ -496,7 +613,7 @@ main h5, main h6 {
 .svc-section-title,
 .work-compact-heading,
 .trust-compact-heading,
-main section:not(.hero-banner) > .mx-auto h2.font-serif,
+main section:not(.hero-banner)>.mx-auto h2.font-serif,
 main section:not(.hero-banner) h2.font-serif,
 main section:not(.hero-banner) h2.section-heading {
   font-size: 2rem !important;
@@ -516,10 +633,12 @@ main section:not(.hero-banner) h2.section-heading {
 .site-footer .footer-subscribe-label {
   display: none !important;
 }
+
 .footer-subscribe-msg {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   color: #ffffff !important;
 }
+
 .footer-subscribe-btn {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   font-weight: 500 !important;
@@ -527,26 +646,31 @@ main section:not(.hero-banner) h2.section-heading {
   background: #ffffff !important;
   white-space: nowrap !important;
 }
+
 .footer-subscribe-input {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   color: #ffffff !important;
 }
+
 .footer-subscribe-row {
   display: flex !important;
   align-items: stretch !important;
   gap: 0 !important;
   position: relative !important;
 }
+
 .footer-subscribe-input {
   border-right: 0 !important;
   padding-top: calc(0.65rem - 1px) !important;
   padding-bottom: calc(0.65rem - 1px) !important;
 }
+
 .footer-subscribe-btn {
   margin-left: 0 !important;
   padding-top: calc(0.65rem - 1px) !important;
   padding-bottom: calc(0.65rem - 1px) !important;
 }
+
 .footer-subscribe-hp,
 .site-footer .footer-subscribe-hp {
   position: absolute !important;
@@ -557,6 +681,7 @@ main section:not(.hero-banner) h2.section-heading {
   overflow: hidden !important;
   pointer-events: none !important;
 }
+
 .visually-hidden {
   position: absolute !important;
   width: 1px !important;
@@ -572,7 +697,7 @@ main section:not(.hero-banner) h2.section-heading {
 /* Trust section body copy */
 .trust-compact-lead,
 .trust-compact-note,
-.trust-principle > p:not(.trust-principle-num) {
+.trust-principle>p:not(.trust-principle-num) {
   font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
   font-weight: 400 !important;
   color: var(--amz-body) !important;
@@ -580,21 +705,23 @@ main section:not(.hero-banner) h2.section-heading {
 
 /* Navbar — black bar + dark pill (colors only; fonts untouched) */
 #site-header {
-  background: linear-gradient(90deg, #141414 0%, #0a0a0a 50%, #050505 100%) !important;
-  border-color: transparent !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08) !important;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05) !important;
 }
+
 #site-header .header-cta {
-  background: #1c1c1c !important;
+  background: #000000 !important;
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(17, 17, 17, 0.22) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 3px 8px -2px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
+
 #site-header .nav-pill .nav-link,
-#site-header .nav-pill .nav-drop-btn,
-#site-header .header-cta {
-  color: #ffffff !important;
+#site-header .nav-pill .nav-drop-btn {
+  color: #000 !important;
 }
 
 /* FAQ questions only — larger than answer body; answers untouched */
@@ -628,15 +755,18 @@ h2.svc-section-title {
   opacity: 1 !important;
   font-size: 1rem !important;
 }
+
 #site-header .header-cta {
   font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
   font-weight: 600 !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
 }
+
 #site-header #menu-btn {
-  color: #ffffff !important;
+  color: #000 !important;
 }
+
 /* Kill page-local section title size overrides (keep banner/svc-hero separate) */
 .svc-section-title,
 .section-heading,
@@ -646,6 +776,7 @@ main h2.svc-section-title {
   font-size: 2rem !important;
   line-height: 1.15 !important;
 }
+
 main h2,
 main h2.font-serif,
 main h2.section-heading,
@@ -678,6 +809,7 @@ p:not(.font-serif),
 .text-xs.font-medium.uppercase {
   font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
 }
+
 .value-num,
 .font-serif,
 .svc-hero-title,
@@ -686,7 +818,12 @@ p:not(.font-serif),
 .work-row-title,
 .work-compact-heading,
 .trust-compact-heading,
-main h1, main h2, main h3, main h4, main h5, main h6 {
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6 {
   font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
 }
 
@@ -720,7 +857,7 @@ html[data-cms-page^="services/"] main .build-card li {
 }
 
 /* Problem card titles — same size and weight as h3 */
-.problem-gap-card > p.font-serif.text-lg {
+.problem-gap-card>p.font-serif.text-lg {
   font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
   font-size: 1.2rem !important;
   font-weight: 500 !important;
@@ -757,6 +894,7 @@ main li:not(.nav-drop-item) {
   font-weight: 400 !important;
   line-height: 1.65 !important;
 }
+
 main h2:not(.hero-title),
 main .section-heading,
 main .svc-section-title,
@@ -767,6 +905,7 @@ main .trust-compact-heading {
   font-weight: 600 !important;
   line-height: 1.15 !important;
 }
+
 main h3 {
   font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
   font-size: 1.2rem !important;
@@ -806,28 +945,153 @@ main .btn-secondary {
     border-color 0.45s ease,
     opacity 0.45s ease !important;
 }
+
 main .btn-primary:hover,
 main .btn-secondary:hover {
   transform: translateY(-2px) !important;
 }
+
 main .btn-primary:active,
 main .btn-secondary:active {
   transform: translateY(0) !important;
   transition-duration: 0.28s !important;
 }
+
 main .btn-secondary::before {
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 /* Text links with an arrow (Explore Industries →) — slide the arrow, not the gap */
-main a.inline-flex.gap-2 > span[aria-hidden="true"],
-main .svc-card .inline-flex.gap-2 > span[aria-hidden="true"] {
+main a.inline-flex.gap-2>span[aria-hidden="true"],
+main .svc-card .inline-flex.gap-2>span[aria-hidden="true"] {
   display: inline-block;
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
-main a.inline-flex.gap-2:hover > span[aria-hidden="true"],
-main .svc-card:hover .inline-flex.gap-2 > span[aria-hidden="true"] {
+
+main a.inline-flex.gap-2:hover>span[aria-hidden="true"],
+main .svc-card:hover .inline-flex.gap-2>span[aria-hidden="true"] {
   transform: translateX(0.35rem);
+}
+
+/* =========================================================
+   NAVBAR TEXT VISIBILITY FIX — desktop nav links BLACK on
+   white navbar; mobile menu WHITE on dark overlay panel.
+   Loads after all other sheets; beats white-on-white override.
+   ========================================================= */
+#site-header {
+  color: #111111 !important;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08) !important;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Desktop nav pill — black text on white navbar */
+#site-header .nav-link,
+#site-header .nav-pill .nav-link,
+#site-header .nav-drop-btn,
+#site-header .nav-pill .nav-drop-btn,
+#site-header .nav-drop-btn span,
+#site-header .nav-pill .nav-drop-btn span,
+#site-header .nav-pill>li a,
+#site-header .nav-pill>li button {
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+/* Desktop nav pill hover — stay black, no color change */
+#site-header .nav-pill .nav-link:hover,
+#site-header .nav-pill .nav-drop-btn:hover,
+#site-header .nav-pill .nav-link.is-active,
+#site-header .nav-pill .nav-drop.is-open>.nav-drop-btn {
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+/* Header Get Started — fully visible pill with smooth hover animation */
+#site-header .header-cta {
+  color: #ffffff !important;
+  background: #000000 !important;
+  border: 1px solid rgba(17, 17, 17, 0.22) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 3px 8px -2px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(0) scale(1) !important;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+@media screen and (max-width: 400px) {
+  #site-header .header-cta {
+    transform: translateY(0) scale(0.9) !important;
+    transform-origin: right center !important;
+    padding: 8px 16px !important;
+    white-space: nowrap !important;
+  }
+}
+
+#site-header .header-cta:hover {
+  background: #111111 !important;
+  color: #ffffff !important;
+  border-color: #111111 !important;
+  transform: translateY(-2px) scale(1) !important;
+  box-shadow: 0 8px 20px -4px rgba(17, 17, 17, 0.3) !important;
+}
+
+#site-header .header-cta:active {
+  background: #222222 !important;
+  color: #ffffff !important;
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 3px 8px -2px rgba(17, 17, 17, 0.25) !important;
+  transition-duration: 0.12s !important;
+}
+
+/* Hamburger — black icon on white navbar */
+#site-header #menu-btn,
+#site-header #menu-btn svg,
+#site-header #menu-btn path {
+  color: #111111 !important;
+  fill: #111111 !important;
+  stroke: #111111 !important;
+}
+
+/* Mobile menu — white background with black text */
+#site-header #mobile-menu,
+#mobile-menu {
+  background: #ffffff !important;
+}
+
+#site-header #mobile-menu,
+#site-header #mobile-menu .mobile-services-btn,
+#site-header #mobile-menu .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
+#site-header #mobile-menu a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+/* Mobile menu open state — keep black uppercase text */
+#site-header #mobile-menu.is-open .mobile-services-btn,
+#site-header #mobile-menu.is-open .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
+#site-header #mobile-menu.is-open a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
+  opacity: 1 !important;
+  color: #111111 !important;
+}
+
+/* Mobile services dropdown — black text on white panel */
+#mobile-menu .nav-drop-item,
+#mobile-menu .nav-drop-name,
+#mobile-menu .mobile-services .nav-drop-item,
+#mobile-menu .mobile-services .nav-drop-name {
+  color: #111111 !important;
+}
+
+#mobile-menu .nav-drop-item:hover,
+#mobile-menu .nav-drop-item:focus-visible,
+#mobile-menu .mobile-services .nav-drop-item:hover,
+#mobile-menu .mobile-services .nav-drop-item:focus-visible {
+  background: rgba(17, 17, 17, 0.06) !important;
+  color: #111111 !important;
+}
+
+/* Mobile Get Started pill — black text on cream pill */
+#mobile-menu .mobile-menu-cta {
+  color: #111111 !important;
 }
 
 /* Live support tab — every public page (styles were only inline on the homepage) */
@@ -849,12 +1113,14 @@ main .svc-card:hover .inline-flex.gap-2 > span[aria-hidden="true"] {
   transform: translateY(-50%);
   transition: padding-right 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
+
 .live-support-wa:hover {
   padding-right: 0.7rem;
   background: #20bd5a;
   box-shadow: -8px 10px 28px rgba(17, 17, 17, 0.22);
   color: #fff;
 }
+
 .live-support-wa-icon {
   display: grid;
   place-items: center;
@@ -862,11 +1128,13 @@ main .svc-card:hover .inline-flex.gap-2 > span[aria-hidden="true"] {
   height: 1.55rem;
   flex-shrink: 0;
 }
+
 .live-support-wa-icon svg {
   width: 1.55rem;
   height: 1.55rem;
   display: block;
 }
+
 .live-support-wa-text {
   font-family: "Josefin Sans", "Josefin Fallback", system-ui, sans-serif;
   font-size: 0.75rem;

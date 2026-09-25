@@ -72,7 +72,9 @@
 
     #site-header .nav-link,
     #site-header .nav-drop-btn,
-    #site-header .header-cta {
+    #site-header .header-cta,
+    #site-header #mobile-menu .mobile-services-btn,
+    #site-header #mobile-menu .mobile-link {
       font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
     }
 
@@ -112,7 +114,7 @@
       text-transform: uppercase !important;
     }
   </style>
-  <link rel="stylesheet" href="assets/site.css?v=141" />
+  <link rel="stylesheet" href="assets/site.css?v=144" />
   <link rel="stylesheet" href="assets/tailwind.min.css?v=1" />
   <script>document.documentElement.classList.add("js");</script>
   <script>
@@ -282,11 +284,13 @@
     }
 
     #site-header {
-      background: linear-gradient(90deg, #141414 0%, #0a0a0a 50%, #050505 100%);
-      border-color: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      backdrop-filter: blur(18px) saturate(1.2);
-      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+      background: #ffffff;
+      border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+      border-color: rgba(17, 17, 17, 0.1);
+      color: #111111;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
       /* Match body + site.css (padding outside max-w-7xl) */
       padding-left: 1.25rem;
@@ -332,13 +336,14 @@
 
     #site-header .site-logo-header {
       display: block;
-      height: 45px;
-      max-height: 45px;
+      height: 50px !important;
+      max-height: 50px !important;
       width: auto;
-      max-width: 151px;
+      max-width: none;
       object-fit: contain;
       object-position: left center;
       opacity: 1 !important;
+      image-rendering: auto;
       transition: none !important;
       transform: none !important;
     }
@@ -348,30 +353,34 @@
       isolation: isolate;
       overflow: hidden;
       box-sizing: border-box;
+      display: inline-flex;
       height: 2.5rem;
       min-height: 2.5rem;
       max-height: 2.5rem;
       padding-top: 0 !important;
       padding-bottom: 0 !important;
-      display: inline-flex;
+      padding-left: clamp(0.55rem, 2.5vw, 1rem) !important;
+      padding-right: clamp(0.55rem, 2.5vw, 1rem) !important;
+      font-size: clamp(0.7rem, 2.2vw, 0.875rem) !important;
+      white-space: nowrap;
       align-items: center;
       line-height: 1;
-      background: #1c1c1c;
-      color: #ffffff;
+      background: #ffffff;
+      color: #111111;
       font-weight: 600 !important;
       font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.28),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(17, 17, 17, 0.22);
+      border-radius: 9999px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 3px 8px -2px rgba(0, 0, 0, 0.08);
       transform: translateY(0) scale(1);
       transition:
-        transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-        background 0.35s ease,
-        box-shadow 0.35s ease,
-        border-color 0.35s ease;
+        transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.25s ease,
+        box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 0.25s ease,
+        color 0.25s ease;
     }
 
     #site-header .header-cta::before {
@@ -379,14 +388,12 @@
     }
 
     #site-header .header-cta:hover {
-      background: #242424;
+      background: #111111;
       color: #ffffff;
       opacity: 1;
-      transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.22);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.32),
-        0 8px 22px -14px rgba(0, 0, 0, 0.55);
+      transform: translateY(-2px) scale(1);
+      border-color: #111111;
+      box-shadow: 0 8px 20px -4px rgba(17, 17, 17, 0.3);
     }
 
     #site-header .header-cta:hover::before {
@@ -394,10 +401,11 @@
     }
 
     #site-header .header-cta:active {
-      background: #1c1c1c;
+      background: #222222;
       color: #ffffff;
-      transform: translateY(0);
-      transition-duration: 0.15s;
+      transform: translateY(0) scale(0.97);
+      box-shadow: 0 3px 8px -2px rgba(17, 17, 17, 0.25);
+      transition-duration: 0.12s;
     }
 
     #site-header #menu-btn {
@@ -411,9 +419,9 @@
     #site-header.is-stuck,
     #site-header.is-menu-open.is-stuck,
     #site-header.is-menu-open:not(.is-stuck) {
-      background: linear-gradient(90deg, #141414 0%, #0a0a0a 50%, #050505 100%);
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 12px 40px -28px rgba(0, 0, 0, 0.35);
+      background: #ffffff;
+      border-bottom: 1px solid rgb(0 0 0 / 18%) !important;
+      box-shadow: 0 4px 16px -8px rgb(0 0 0 / 32%) !important;
     }
 
     #site-header .header-cta {
@@ -427,17 +435,18 @@
     }
 
     #mobile-menu {
-      background: rgba(14, 14, 14, 0.985);
+      background: #ffffff;
     }
 
     #site-header #menu-btn {
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(17, 17, 17, 0.2);
     }
 
     #site-header #mobile-menu a.rounded-full,
     #site-header #mobile-menu .mobile-menu-cta {
-      background: #F5F1E8;
-      color: #111111;
+      background: #000000;
+      color: #ffffff !important;
+      font-size: 1rem;
     }
 
     html.nav-locked {
@@ -482,8 +491,8 @@
     }
 
     #menu-btn[aria-expanded="true"] {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(17, 17, 17, 0.08);
+      border-color: rgba(17, 17, 17, 0.35);
     }
 
     #menu-btn svg {
@@ -498,7 +507,7 @@
       visibility: hidden;
       pointer-events: none;
       border-top: 1px solid transparent;
-      background: rgba(14, 14, 14, 0.985);
+      background: #ffffff;
       transition:
         grid-template-rows 0.48s cubic-bezier(0.22, 1, 0.36, 1),
         opacity 0.32s ease,
@@ -511,8 +520,9 @@
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      border-top-color: rgba(255, 255, 255, 0.12);
+      border-top-color: rgba(17, 17, 17, 0.1);
     }
+
     #mobile-menu:not(.is-open) .mobile-menu-nav {
       visibility: hidden;
     }
@@ -575,18 +585,18 @@
       padding: 0.85rem 0.15rem;
       border: 0;
       background: transparent;
-      color: inherit;
+      color: #111111;
       font: inherit;
       text-align: left;
       text-decoration: none;
       letter-spacing: -0.01em;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(17, 17, 17, 0.1);
       transition: color 0.25s ease, padding-left 0.25s ease, opacity 0.25s ease;
     }
 
     #mobile-menu .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta):hover,
     #mobile-menu .mobile-services-btn:hover {
-      color: #fff;
+      color: #111111;
       padding-left: 0.35rem;
     }
 
@@ -598,7 +608,9 @@
       color: #111 !important;
       text-align: center;
       justify-content: center;
-      padding: 0.85rem 1.25rem !important;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.85rem clamp(0.75rem, 4vw, 1.25rem) !important;
       font-weight: 500;
       letter-spacing: -0.01em;
       box-shadow: 0 10px 28px -18px rgba(0, 0, 0, 0.55);
@@ -649,13 +661,13 @@
 
     #mobile-menu .mobile-services .nav-drop-item,
     #mobile-menu .mobile-services .nav-drop-name {
-      color: #ffffff;
+      color: #111111;
     }
 
     #mobile-menu .mobile-services .nav-drop-item:hover,
     #mobile-menu .mobile-services .nav-drop-item:focus-visible {
-      background: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
+      background: rgba(17, 17, 17, 0.06);
+      color: #111111;
     }
 
     #mobile-menu .nav-drop-num {
@@ -672,7 +684,7 @@
     }
 
     #mobile-menu .mobile-services .nav-drop-item+.nav-drop-item {
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(17, 17, 17, 0.1);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -763,13 +775,12 @@
       width: max-content;
       max-width: 100%;
       padding: 0.4rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(17, 17, 17, 0.1);
       border-radius: 1.15rem;
-      background: #1c1c1c;
+      background: #ffffff;
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.28),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-        0 12px 28px -14px rgba(0, 0, 0, 0.65);
+        0 4px 16px -8px rgba(0, 0, 0, 0.12),
+        0 12px 28px -14px rgba(0, 0, 0, 0.1);
     }
 
     .nav-drop-item {
@@ -779,7 +790,7 @@
       width: 100%;
       padding: 0.62rem 1.1rem;
       border-radius: 0.85rem;
-      color: #ffffff;
+      color: #111111;
       text-decoration: none;
       white-space: nowrap;
       transition: background 0.15s ease, color 0.15s ease;
@@ -787,13 +798,13 @@
     }
 
     .nav-drop-item+.nav-drop-item {
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(17, 17, 17, 0.08);
     }
 
     .nav-drop-item:hover,
     .nav-drop-item:focus-visible {
-      background: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
+      background: rgba(17, 17, 17, 0.06);
+      color: #111111;
       outline: none;
     }
 
@@ -957,7 +968,6 @@
       display: grid;
       overflow: hidden;
       /* Keep full banner clear of the fixed header (same as before) */
-      padding-top: calc(4.5rem + 7px);
       color: #F5F1E8;
       /* Fallback only — image covers; no per-device tint */
       background-color: #1ea8d9;
@@ -2866,7 +2876,7 @@
     #site-header .nav-pill .nav-drop-btn:hover,
     #site-header .nav-pill .nav-link.is-active,
     #site-header .nav-pill .nav-drop.is-open>.nav-drop-btn {
-      color: #ffffff !important;
+      color: #000 !important;
     }
 
     #site-header .text-\[15px\] {
@@ -2876,26 +2886,27 @@
     }
 
     #site-header #menu-btn {
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.35) !important;
+      color: #111111 !important;
+      border-color: rgba(17, 17, 17, 0.25) !important;
     }
 
     #site-header #mobile-menu,
     #site-header #mobile-menu .mobile-services-btn,
     #site-header #mobile-menu a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
-      color: #ffffff !important;
+      color: #111111 !important;
     }
 
     #site-header #mobile-menu.is-open .mobile-services-btn,
     #site-header #mobile-menu.is-open .mobile-link:not(.nav-drop-item):not(.mobile-menu-cta),
     #site-header #mobile-menu.is-open a:not(.nav-drop-item):not(.rounded-full):not(.mobile-menu-cta) {
       opacity: 1;
+      text-transform: uppercase;
     }
 
     #site-header #mobile-menu .mobile-services-btn,
     #site-header #mobile-menu a:not(.nav-drop-item):not(.mobile-menu-cta) {
-      font-weight: 400 !important;
-      font-size: 0.9rem !important;
+      font-weight: 600 !important;
+      font-size: 1rem !important;
     }
 
     .nav-drop-name {
@@ -3133,7 +3144,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="assets/amz-text.css?v=88" />
+  <link rel="stylesheet" href="assets/amz-text.css?v=91" />
 </head>
 
 <body class="bg-paper text-ink antialiased">
@@ -3142,11 +3153,11 @@
     class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-paper">Skip
     to content</a>
 
-  <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-white/10 text-paper">
+  <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-black/10 text-paper">
     <nav class="mx-auto flex w-full max-w-7xl items-center justify-between" aria-label="Primary">
       <a href="index.html" class="site-logo-link flex items-center" aria-label="Townloc home">
-        <img class="site-logo site-logo-header" src="assets/images/townloc-logo.png?v=6" alt="Townloc" width="151"
-          height="45" decoding="sync" fetchpriority="high" />
+        <img class="site-logo site-logo-header" src="assets/images/logo-black.png" alt="Townloc" width="173" height="58"
+          decoding="sync" fetchpriority="high" style="width:auto;height:58px;max-height:58px;" />
       </a>
       <ul class="nav-pill hidden items-center gap-8 text-sm lg:flex">
         <li class="nav-drop relative">
@@ -3187,7 +3198,7 @@
       </ul>
       <div class="flex items-center gap-3">
         <a href="#contact" data-cms="header.ctaText"
-          class="header-cta hidden rounded-full bg-white text-ink px-4 py-2 text-sm font-semibold lg:inline-flex">Get
+          class="header-cta inline-flex rounded-full bg-white text-ink font-semibold">Get
           Started</a>
         <button id="menu-btn"
           class="grid h-10 w-10 place-items-center rounded-full border border-white/20 transition-all duration-300 ease-in-out lg:hidden"
