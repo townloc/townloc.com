@@ -819,3 +819,53 @@ main a.inline-flex.gap-2:hover > span[aria-hidden="true"],
 main .svc-card:hover .inline-flex.gap-2 > span[aria-hidden="true"] {
   transform: translateX(0.35rem);
 }
+
+/* Live support tab — every public page (styles were only inline on the homepage) */
+.live-support-wa {
+  position: fixed;
+  top: 72%;
+  right: 0;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 0.55rem 1rem;
+  text-decoration: none;
+  color: #fff;
+  background: #25d366;
+  border-radius: 0.75rem 0 0 0.75rem;
+  box-shadow: -6px 8px 24px rgba(17, 17, 17, 0.18);
+  transform: translateY(-50%);
+  transition: padding-right 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.live-support-wa:hover {
+  padding-right: 0.7rem;
+  background: #20bd5a;
+  box-shadow: -8px 10px 28px rgba(17, 17, 17, 0.22);
+  color: #fff;
+}
+.live-support-wa-icon {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex-shrink: 0;
+}
+.live-support-wa-icon svg {
+  width: 1.55rem;
+  height: 1.55rem;
+  display: block;
+}
+.live-support-wa-text {
+  font-family: "Josefin Sans", "Josefin Fallback", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}

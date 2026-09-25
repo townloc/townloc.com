@@ -10,3 +10,7 @@ Desktop.ini
 backend/worker/node_modules/
 backend/worker/.wrangler/
 backend/worker/dist/
+__pycache__/
+*.pyc
+scripts/_tmp_*.py
+scripts/node_modules/
