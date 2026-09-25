@@ -1,4 +1,4 @@
-/* Self-hosted Open Sans (no Google Fonts round-trip) */
+/* Sitewide self-hosted fonts — EVERY page (not only homepage inline) */
 @font-face {
   font-family: "Open Sans";
   font-style: normal;
@@ -16,6 +16,62 @@
   ascent-override: 101%;
   descent-override: 27%;
   line-gap-override: 0%;
+  size-adjust: 98%;
+}
+@font-face {
+  font-family: Rajdhani;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/rajdhani-400-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: Rajdhani;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/rajdhani-600-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: Rajdhani;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/rajdhani-700-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Rajdhani Fallback";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Arial Narrow"), local("Arial"), local("Helvetica");
+  size-adjust: 105%;
+}
+@font-face {
+  font-family: "Josefin Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/josefin-400-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Josefin Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/josefin-600-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Josefin Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/josefin-700-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Josefin Fallback";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Arial"), local("Helvetica Neue"), local("Helvetica");
   size-adjust: 105%;
 }
 
@@ -32,7 +88,7 @@ body {
   background-color: #ffffff;
   color: var(--amz-body) !important;
   font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
   line-height: 1.75;
   word-wrap: break-word;
@@ -94,7 +150,7 @@ main p.text-xs.font-medium.uppercase {
 #contact label > span.font-medium,
 #contract-form label > span:not(.text-xs),
 #contact label > span:not(.text-xs) {
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-weight: 400 !important;
   line-height: 1.4 !important;
   color: #333333 !important;
@@ -394,7 +450,9 @@ main h5, main h6 {
   text-transform: uppercase !important;
 }
 .site-footer .footer-col a,
-.footer-col a {
+.footer-col a,
+.site-footer .footer-contact a.footer-contact-link,
+.footer-contact a.footer-contact-link {
   font-size: 1rem !important;
   font-weight: 400 !important;
 }
@@ -417,7 +475,7 @@ main h5, main h6 {
 #site-header .nav-drop-name,
 .nav-drop-name,
 #mobile-menu .nav-drop-name {
-  font-size: 1rem !important;
+  font-size: 0.9375rem !important;
 }
 .hero-banner .hero-lead,
 .hero-lead {
@@ -448,7 +506,7 @@ main section:not(.hero-banner) h2.section-heading {
 /* footer-tagline — 15px */
 .site-footer .footer-tagline,
 .footer-tagline {
-  font-size: 15px !important;
+  font-size: 14px !important;
 }
 
 
@@ -529,9 +587,12 @@ main section:not(.hero-banner) h2.section-heading {
   color: #ffffff !important;
 }
 
-/* FAQ questions — section-headline font family only */ (size/weight/color untouched)
+/* FAQ questions only — larger than answer body; answers untouched */
 .faq-accordion details summary {
-  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
+  font-size: 0.97rem !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
 }
 
 /* h2 only — font-weight 600 (banner untouched; beat .font-serif/.section-heading) */
@@ -549,3 +610,212 @@ h2.svc-section-title {
   font-weight: 600 !important;
 }
 
+/* Sitewide nav/footer polish — last cascade (all pages) */
+#site-header .nav-link,
+#site-header .nav-drop-btn,
+#site-header .nav-drop-btn span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  font-size: 1rem !important;
+}
+#site-header .header-cta {
+  font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+#site-header #menu-btn {
+  color: #ffffff !important;
+}
+/* Kill page-local section title size overrides (keep banner/svc-hero separate) */
+.svc-section-title,
+.section-heading,
+main h2.font-serif,
+main h2.section-heading,
+main h2.svc-section-title {
+  font-size: 2rem !important;
+  line-height: 1.15 !important;
+}
+main h2,
+main h2.font-serif,
+main h2.section-heading,
+main h2.work-compact-heading,
+main h2.trust-compact-heading,
+main h2.svc-section-title {
+  font-weight: 600 !important;
+}
+
+/* Force body stack sitewide — beat site.css Outfit !important */
+body,
+body.text-ink,
+body.bg-paper,
+button,
+input,
+select,
+textarea,
+main p,
+main li,
+main .body-lg,
+main .svc-lead,
+main .text-xs,
+main .text-sm,
+p:not(.font-serif),
+.body-lg,
+.svc-lead,
+.text-xs,
+.text-sm,
+.text-xs.uppercase,
+.text-xs.font-medium.uppercase {
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
+}
+.value-num,
+.font-serif,
+.svc-hero-title,
+.svc-section-title,
+.section-heading,
+.work-row-title,
+.work-compact-heading,
+.trust-compact-heading,
+main h1, main h2, main h3, main h4, main h5, main h6 {
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+}
+
+/* Footer guarantee + tagline — same face as footer links (Rajdhani), nothing else */
+.site-footer .footer-guarantee-label,
+.site-footer .footer-guarantee-text,
+.site-footer .footer-guarantee-text span,
+.site-footer .footer-tagline {
+  font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
+}
+
+/* Service-page body that was still weight 300 — weight 400 at the 400 size (0.9rem) */
+html[data-cms-page^="services/"] main p.text-sm:not(.font-medium):not(.font-semibold):not(.font-serif),
+html[data-cms-page^="services/"] main p.text-base:not(.font-medium):not(.font-semibold):not(.font-serif),
+html[data-cms-page^="services/"] main .svc-lead,
+html[data-cms-page^="services/"] main .checklist-grid li,
+html[data-cms-page^="services/"] main .approach-list li,
+html[data-cms-page^="services/"] main .optimize-card li,
+html[data-cms-page^="services/"] main .do-card li,
+html[data-cms-page^="services/"] main .build-card li {
+  font-weight: 400 !important;
+  font-size: 0.9rem !important;
+}
+
+/* Trust strip titles — same face, size, and weight as h3 */
+#trust-strip .trust-badge p.text-sm {
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+  font-size: 1.1rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+}
+
+/* Problem card titles — same size and weight as h3 */
+.problem-gap-card > p.font-serif.text-lg {
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+  font-size: 1.2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+}
+
+/* Entire footer — link face only (Rajdhani). Size and weight stay as they are. */
+.site-footer,
+.site-footer p,
+.site-footer li,
+.site-footer a,
+.site-footer span,
+.site-footer label,
+.site-footer input,
+.site-footer button {
+  font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
+}
+
+/* Desktop nav is visible from 1024px — hamburger is mobile only.
+   Built Tailwind has no md:hidden / lg:hidden, so CMS pages keep showing the button. */
+@media (min-width: 1024px) {
+  #site-header #menu-btn {
+    display: none !important;
+  }
+}
+
+/* Same body / h2 / h3 on every page (banner, footer, form, nav untouched) */
+main p:not(.font-serif):not(.font-medium):not(.text-xs):not(.hero-eyebrow),
+main .svc-lead,
+main .body-lg,
+main li:not(.nav-drop-item) {
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  line-height: 1.65 !important;
+}
+main h2:not(.hero-title),
+main .section-heading,
+main .svc-section-title,
+main .work-compact-heading,
+main .trust-compact-heading {
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  line-height: 1.15 !important;
+}
+main h3 {
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+  font-size: 1.2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+}
+
+/* Homepage service cards only — keep the previous text-2xl title */
+#services .svc-card h3 {
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
+  font-size: 1.5rem !important;
+  font-weight: 500 !important;
+  line-height: 1.375 !important;
+}
+
+/* Black promise panels only — white text, beats body/ink remaps */
+main .approach-panel,
+main .approach-panel h2,
+main .approach-panel h3,
+main .approach-panel p,
+main .approach-panel li,
+main .approach-panel .approach-list,
+main .approach-panel p.text-xs,
+main .approach-panel p.text-xs.font-medium.uppercase,
+main .approach-panel p.leading-relaxed,
+main .approach-panel p.font-medium {
+  color: #ffffff !important;
+}
+
+/* Body buttons — one smooth lift, no scale snap */
+main .btn-primary,
+main .btn-secondary {
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.45s ease,
+    border-color 0.45s ease,
+    opacity 0.45s ease !important;
+}
+main .btn-primary:hover,
+main .btn-secondary:hover {
+  transform: translateY(-2px) !important;
+}
+main .btn-primary:active,
+main .btn-secondary:active {
+  transform: translateY(0) !important;
+  transition-duration: 0.28s !important;
+}
+main .btn-secondary::before {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Text links with an arrow (Explore Industries →) — slide the arrow, not the gap */
+main a.inline-flex.gap-2 > span[aria-hidden="true"],
+main .svc-card .inline-flex.gap-2 > span[aria-hidden="true"] {
+  display: inline-block;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+main a.inline-flex.gap-2:hover > span[aria-hidden="true"],
+main .svc-card:hover .inline-flex.gap-2 > span[aria-hidden="true"] {
+  transform: translateX(0.35rem);
+}

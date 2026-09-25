@@ -24,7 +24,7 @@ button,
 input,
 select,
 textarea {
-  font-family: Outfit, "Outfit Fallback", system-ui, sans-serif;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif;
   font-size: 17px;
   line-height: 1.65;
   font-weight: 300;
@@ -35,7 +35,7 @@ textarea {
   text-rendering: auto;
 }
 ::selection { background: #111111; color: #f4f1ea; }
-/* Headlines + subheadings use Outfit (same family as body / screenshot) */
+/* Headlines + subheadings — Josefin (sitewide) */
 .font-serif,
 .svc-hero-title,
 .svc-section-title,
@@ -48,7 +48,7 @@ textarea {
 h1,
 h2,
 h3 {
-  font-family: Outfit, "Outfit Fallback", system-ui, sans-serif !important;
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
   font-weight: 500 !important;
   letter-spacing: -0.02em;
 }
@@ -1377,7 +1377,7 @@ html.is-navigating .nav-drop-menu {
 }
 .footer-guarantee-text {
   margin-top: 0.35rem;
-  font-family: Outfit, system-ui, sans-serif;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif;
   font-weight: 300;
   font-size: 1.05rem;
   line-height: 1.45;
@@ -1431,7 +1431,7 @@ html.is-navigating .nav-drop-menu {
 
 .legal-prose h2 {
   margin-top: 2.25rem;
-  font-family: Outfit, system-ui, sans-serif;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif;
   font-weight: 500;
   font-size: 1.5rem;
   line-height: 1.25;
@@ -1618,8 +1618,8 @@ p.text-lg:not(.font-serif) {
 p:not(.font-serif):not(.text-xs):not(.journey-label):not(.hero-eyebrow):not(.text-\[11px\]):not(.text-\[10px\]),
 .body-lg,
 .svc-lead {
-  font-family: Outfit, system-ui, sans-serif !important;
-  font-size: 0.975rem !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
+  font-size: 0.9rem !important;
   line-height: 1.65 !important;
   font-weight: 400 !important;
 }
@@ -1634,7 +1634,7 @@ p.font-medium:not(.font-serif):not(.text-xs):not(.journey-label) {
 
 /* Card / inline subheadings (were serif) */
 p.font-serif {
-  font-family: Outfit, system-ui, sans-serif !important;
+  font-family: "Josefin Sans", "Josefin Fallback", sans-serif !important;
   font-weight: 500 !important;
   line-height: 1.35 !important;
 }
@@ -1652,18 +1652,18 @@ p.font-serif.text-xl {
   font-size: 0.875rem !important;
   line-height: 1.4 !important;
   font-weight: 500 !important;
-  font-family: Outfit, system-ui, sans-serif !important;
+  font-family: Rajdhani, "Rajdhani Fallback", sans-serif !important;
 }
 
 #trust-strip .trust-badge p.text-xs {
 
 
-  font-size: 0.85rem !important;
+  font-size: 0.7875rem !important;
   line-height: 1.45 !important;
   font-weight: 400 !important;
   letter-spacing: 0rem !important;
   color: #282727 !important;
-  font-family: Outfit, system-ui, sans-serif !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
 }
 
 #journey .journey-label,
@@ -1671,14 +1671,14 @@ p.font-serif.text-xl {
   font-size: 0.8125rem !important;
   line-height: 1.35 !important;
   font-weight: 500 !important;
-  font-family: Outfit, system-ui, sans-serif !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
 }
 
 .svc-section-title,
 .section-heading,
 .svc-hero-title,
 .hero-title {
-  font-family: Outfit, system-ui, sans-serif !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
   font-weight: 500 !important;
   letter-spacing: -0.02em;
   color: #111111;
@@ -1722,7 +1722,7 @@ main > section:first-of-type p.text-\[11px\],
 #contract-form input,
 #contract-form select,
 #contract-form textarea {
-  font-family: Outfit, system-ui, sans-serif !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
   font-size: 0.875rem !important;
   font-weight: 300 !important;
   line-height: 1.5 !important;
@@ -1835,7 +1835,7 @@ main section h2.svc-section-title {
 /* Uppercase labels: same regular site font, stay uppercase */
 .text-xs.uppercase,
 .text-xs.font-medium.uppercase {
-  font-family: Outfit, "Outfit Fallback", system-ui, sans-serif !important;
+  font-family: "Open Sans", "Open Sans Fallback", system-ui, sans-serif !important;
   font-weight: 300 !important;
   text-transform: uppercase;
   letter-spacing: 0.1em !important;

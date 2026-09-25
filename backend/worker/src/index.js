@@ -38,6 +38,86 @@ import {
 
 const LAYOUT_SOURCE = "index.html";
 
+/** Keep in sync with index.html / service pages stylesheet query versions. */
+const SHARED_SITE_CSS_V = "139";
+const SHARED_TW_CSS_V = "1";
+const SHARED_AMZ_CSS_V = "85";
+
+/**
+ * CMS/D1 HTML often keeps a stale <head> (Tailwind CDN, Google Fonts, old site.css).
+ * Rewrite every public HTML response to the current absolute shared stylesheets.
+ */
+function normalizeSharedStylesheets(html) {
+  let out = String(html || "");
+  out = out.replace(/<link[^>]+fonts\.googleapis\.com[^>]*>\s*/gi, "");
+  out = out.replace(/<link[^>]+fonts\.gstatic\.com[^>]*>\s*/gi, "");
+  out = out.replace(/<script[^>]+cdn\.tailwindcss\.com[^>]*>\s*<\/script>\s*/gi, "");
+  out = out.replace(/<script[^>]+(?:\.\/|\.\.\/)*assets\/tailwind\.js[^>]*>\s*<\/script>\s*/gi, "");
+  out = out.replace(
+    /<link[^>]+href=["'][^"']*assets\/(?:site|amz-text|tailwind\.min)\.css[^"']*["'][^>]*>\s*/gi,
+    ""
+  );
+  const block =
+    `  <link rel="stylesheet" href="/assets/site.css?v=${SHARED_SITE_CSS_V}" />\n` +
+    `  <link rel="stylesheet" href="/assets/tailwind.min.css?v=${SHARED_TW_CSS_V}" />\n` +
+    `  <link rel="stylesheet" href="/assets/amz-text.css?v=${SHARED_AMZ_CSS_V}" />\n`;
+  if (/<\/head>/i.test(out)) {
+    out = out.replace(/<\/head>/i, `${block}</head>`);
+  }
+  return out;
+}
+
+/**
+ * Stale CMS headers still use md:flex / no nav-pill. Built Tailwind only ships
+ * lg:flex, and site.css only shows the capsule for .nav-pill — so desktop nav
+ * stays display:none (hamburger-only). Upgrade to current chrome classes.
+ */
+function normalizeStaleHeaderChrome(html) {
+  let out = String(html || "");
+  out = out.replace(
+    /(<ul\b[^>]*\bclass=["'])([^"']*)(["'][^>]*>)/gi,
+    (full, pre, cls, post) => {
+      if (!/\bhidden\b/.test(cls) || !/\bmd:flex\b/.test(cls)) return full;
+      let next = cls.replace(/\bmd:flex\b/g, "lg:flex");
+      if (!/\bnav-pill\b/.test(next)) next = `nav-pill ${next}`.replace(/\s+/g, " ").trim();
+      return `${pre}${next}${post}`;
+    }
+  );
+  out = out.replace(
+    /(\bclass=["'][^"']*\bheader-cta\b[^"']*)\bmd:inline-flex\b([^"']*["'])/gi,
+    "$1lg:inline-flex$2"
+  );
+  return out;
+}
+
+const FOOTER_SUBSCRIBE_HTML = `<form id="footer-subscribe-form" class="footer-subscribe" novalidate>
+            <div class="footer-subscribe-row">
+              <label class="visually-hidden" for="footer-subscribe-email">Email</label>
+              <input id="footer-subscribe-email" class="footer-subscribe-input" type="email" name="email" required placeholder="Email address" autocomplete="email" inputmode="email" />
+              <input type="text" name="website2" class="footer-subscribe-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+              <button type="submit" class="footer-subscribe-btn">SUBSCRIBE</button>
+            </div>
+            <p id="footer-subscribe-msg" class="footer-subscribe-msg" role="status" hidden></p>
+          </form>`;
+
+/** Older CMS footers drop the email subscribe form and leave a gap under the tagline. */
+function ensureFooterSubscribe(html) {
+  const out = String(html || "");
+  if (out.includes("footer-subscribe-form") || !/footer-tagline/i.test(out)) return out;
+  return out.replace(
+    /(<p\b[^>]*\bfooter-tagline\b[^>]*>[\s\S]*?<\/p>)/i,
+    `$1\n          ${FOOTER_SUBSCRIBE_HTML}`
+  );
+}
+
+/** Live Support tab always opens +1 (332) 253 9828, even if stored HTML has the placeholder. */
+function ensureLiveSupportWhatsapp(html) {
+  return String(html || "").replace(
+    /(<a\b[^>]*\blive-support-wa\b[^>]*\bhref=")[^"]*(")/i,
+    "$1https://wa.me/13322539828$2"
+  );
+}
+
 const MAX = {
   clientName: 120,
   email: 180,
@@ -3762,6 +3842,15 @@ async function serveAssetWithCms(request, env) {
     /(https:\/\/townloc\.com\/[^"'>\s]+?)\.html(?=["'\s>])/gi,
     "$1"
   );
+
+  // Admin has its own CSS. Public site stylesheets were enlarging its buttons.
+  const isAdminPage = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
+  if (!isAdminPage) {
+    html = normalizeSharedStylesheets(html);
+    html = normalizeStaleHeaderChrome(html);
+    html = ensureFooterSubscribe(html);
+    html = ensureLiveSupportWhatsapp(html);
+  }
 
   // Short edge cache; CMS saves clear worker memory cache. UI unchanged.
   baseHeaders.set(

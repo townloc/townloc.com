@@ -34,6 +34,9 @@ TAG_RE = re.compile(
     re.I | re.S,
 )
 
+# D1 SQL statement length limit is ~100KB; stay under it.
+SQL_SAFE_BYTES = 90_000
+
 
 def strip_tags(html: str) -> str:
     text = re.sub(r"<[^>]+>", " ", html or "")
@@ -98,11 +101,7 @@ def read_cms_doc() -> dict:
     return json.loads(raw) if isinstance(raw, str) else raw
 
 
-def write_cms_doc(doc: dict) -> None:
-    raw = json.dumps(doc, ensure_ascii=False, separators=(",", ":"))
-    # Escape for SQL single-quoted string
-    sql_literal = raw.replace("'", "''")
-    sql = f"UPDATE site_cms SET data = '{sql_literal}', updated_at = datetime('now') WHERE id = 1;"
+def _run_sql_file(sql: str) -> None:
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", suffix=".sql", delete=False, newline="\n"
     ) as fh:
@@ -135,6 +134,50 @@ def write_cms_doc(doc: dict) -> None:
         sql_path.unlink(missing_ok=True)
 
 
+def write_cms_doc(doc: dict) -> None:
+    """Full-document write. Fails if SQL exceeds D1 ~100KB statement limit."""
+    raw = json.dumps(doc, ensure_ascii=False, separators=(",", ":"))
+    sql_literal = raw.replace("'", "''")
+    sql = f"UPDATE site_cms SET data = '{sql_literal}', updated_at = datetime('now') WHERE id = 1;"
+    if len(sql.encode("utf-8")) > SQL_SAFE_BYTES:
+        raise SystemExit(
+            "CMS document too large for full SQL UPDATE (SQLITE_TOOBIG). "
+            "Use field patches instead."
+        )
+    _run_sql_file(sql)
+
+
+def write_cms_patches(patches: list[tuple[str, str]]) -> None:
+    """
+    Patch JSON paths with json_set so each statement stays under D1 limits.
+    path examples:
+      $.autoPages."index.html"."text:s:page.hero_title"
+      $.pages.home.hero_title
+    """
+    if not patches:
+        return
+    chunk_size = 15
+    for i in range(0, len(patches), chunk_size):
+        chunk = patches[i : i + chunk_size]
+        expr = "data"
+        for path, value in chunk:
+            lit = value.replace("'", "''")
+            path_lit = path.replace("'", "''")
+            expr = f"json_set({expr}, '{path_lit}', json_quote('{lit}'))"
+        sql = (
+            f"UPDATE site_cms SET data = {expr}, "
+            f"updated_at = datetime('now') WHERE id = 1;"
+        )
+        if len(sql.encode("utf-8")) > SQL_SAFE_BYTES:
+            raise SystemExit("Patch chunk still too large for D1 SQL limit.")
+        _run_sql_file(sql)
+
+
+def json_key_seg(key: str) -> str:
+    """Quoted JSON-path key segment for keys that contain dots/colons."""
+    return '"' + key.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -144,6 +187,7 @@ def main() -> None:
     auto_pages = dict(doc.get("autoPages") or {})
     pages = dict(doc.get("pages") or {})
     changed: list[str] = []
+    patches: list[tuple[str, str]] = []
 
     for rel, (auto_key, pages_key) in PAGE_MAP.items():
         html_path = ROOT / rel
@@ -163,9 +207,21 @@ def main() -> None:
             if bucket.get(sid) != text:
                 changed.append(f"{auto_key}:{sid}")
                 bucket[sid] = text
+                patches.append(
+                    (
+                        f"$.autoPages.{json_key_seg(auto_key)}.{json_key_seg(sid)}",
+                        text,
+                    )
+                )
             if pages_key and page_bucket.get(key) != text:
                 changed.append(f"pages.{pages_key}.{key}")
                 page_bucket[key] = text
+                patches.append(
+                    (
+                        f"$.pages.{json_key_seg(pages_key)}.{json_key_seg(key)}",
+                        text,
+                    )
+                )
 
         auto_pages[auto_key] = bucket
         if pages_key:
@@ -190,7 +246,8 @@ def main() -> None:
         print("Dry run — not writing D1.")
         return
 
-    write_cms_doc(doc)
+    # Prefer field patches (avoids SQLITE_TOOBIG on large CMS docs).
+    write_cms_patches(patches)
     print("Done. Hard-refresh townloc.com to see HTML banner/copy.")
 
 

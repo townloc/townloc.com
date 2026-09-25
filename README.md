@@ -42,7 +42,23 @@ cd backend/worker
 npx wrangler login
 ```
 
-Browser opens ? approve with the Cloudflare account that has domain `townloc.com`.
+Browser opens — approve with the Cloudflare account that has domain `townloc.com`.
+
+### Deploy fails: Authentication error [code: 10000]
+
+Wrong Cloudflare account is logged in (e.g. AMZgetway instead of the account that owns `townloc.com`). Fix:
+
+```powershell
+cd "d:\Desktop\Important files\townloc\backend\worker"
+npx wrangler logout
+npx wrangler login
+```
+
+Browser opens — approve with the **townloc.com** Cloudflare account, then:
+
+```powershell
+npm run deploy
+```
 
 ---
 
