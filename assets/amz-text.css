@@ -444,8 +444,8 @@ main h5, main h6 {
   background: #363636 !important;
 }
 .site-footer .footer-col-title {
-  font-size: 1rem !important;
-  font-weight: 500 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
